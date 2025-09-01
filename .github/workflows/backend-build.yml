@@ -12,21 +12,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Build with Docker
-      run: |
-        cd backend
-        docker build -t harbor-registry.harbor.svc.cluster.local:5000/library/backend:${{ github.sha }} .
-        docker build -t harbor-registry.harbor.svc.cluster.local:5000/library/backend:latest .
-    
-    - name: Login to Harbor
-      uses: docker/login-action@v3
+    - name: Build and push to Harbor
+      uses: docker/build-push-action@v5
       with:
-        registry: harbor-registry.harbor.svc.cluster.local:5000
-        username: ${{ secrets.HARBOR_USERNAME }}
-        password: ${{ secrets.HARBOR_PASSWORD }}
-        insecure: true
-    
-    - name: Push to Harbor
-      run: |
-        docker push harbor-registry.harbor.svc.cluster.local:5000/library/backend:${{ github.sha }}
-        docker push harbor-registry.harbor.svc.cluster.local:5000/library/backend:latest
+        context: ./backend
+        push: true
+        tags: |
+          harbor-registry.harbor.svc.cluster.local:5000/library/backend:${{ github.sha }}
+          harbor-registry.harbor.svc.cluster.local:5000/library/backend:latest
+        build-args: |
+          REGISTRY_AUTH_USERNAME=${{ secrets.HARBOR_USERNAME }}
+          REGISTRY_AUTH_PASSWORD=${{ secrets.HARBOR_PASSWORD }}
