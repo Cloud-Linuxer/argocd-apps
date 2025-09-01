@@ -8,7 +8,7 @@ import os
 from typing import Dict, Any, List, Optional
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
@@ -35,26 +35,27 @@ async def lifespan(app: FastAPI):
     logger.info("VLLM 에이전트 초기화 중...")
     
     try:
-        # VLLM 클라이언트 초기화
-        vllm_base_url = os.getenv("VLLM_BASE_URL", "http://192.168.0.2:30081")
-        vllm_model = os.getenv("VLLM_MODEL", "openai/gpt-oss-20b")
+        # VLLM 클라이언트 초기화 (환경변수 필수!)
+        from config import get_vllm_config
+        vllm_config = get_vllm_config()
         
-        vllm_client = VLLMClient(base_url=vllm_base_url, model=vllm_model)
+        vllm_client = VLLMClient(
+            base_url=vllm_config["base_url"], 
+            model=vllm_config["model"]
+        )
         
         # MCP 도구 초기화
         mcp_tools = MCPTools()
         
         # 에이전트 초기화
         system_prompt = """
-당신은 Kubernetes 클러스터를 관리하고 다양한 작업을 수행할 수 있는 AI 어시스턴트입니다.
+당신은 VLLM 기반 AI 어시스턴트입니다.
 사용자의 요청에 따라 제공된 도구들을 사용하여 다음과 같은 작업을 수행할 수 있습니다:
 
-- 파일 시스템 조작 (파일 읽기/쓰기, 디렉토리 나열)
 - HTTP 요청 수행
-- Kubernetes 리소스 조회 (파드, 서비스 등)
-- VLLM API 호출
+- VLLM API 호출  
 - 수학 계산
-- 시스템 정보 조회
+- 시간 조회
 
 도구를 사용할 때는 JSON 형식으로 명확하게 요청하고, 결과를 바탕으로 사용자에게 유용한 정보를 제공하세요.
 """
@@ -170,12 +171,16 @@ async def health():
 @app.get("/api/info")
 async def info():
     """서비스 정보 반환"""
+    from config import get_settings, get_vllm_config
+    settings = get_settings()
+    vllm_config = get_vllm_config()
+    
     return {
         "service": "vllm-function-call-agent",
         "version": "3.0.0",
-        "environment": os.getenv("ENV", "development"),
-        "vllm_base_url": os.getenv("VLLM_BASE_URL", "http://192.168.0.2:30081"),
-        "vllm_model": os.getenv("VLLM_MODEL", "openai/gpt-oss-20b")
+        "environment": settings.env,
+        "vllm_base_url": vllm_config["base_url"],
+        "vllm_model": vllm_config["model"]
     }
 
 

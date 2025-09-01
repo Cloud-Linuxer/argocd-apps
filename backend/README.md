@@ -15,10 +15,7 @@ VLLM_MODEL=your-model-name
 VLLM_MAX_TOKENS=1000
 VLLM_TEMPERATURE=0.7
 
-# Kubernetes 설정 (민감 정보!)
-K8S_HOST=your-k8s-host
-K8S_USER=your-k8s-user
-K8S_PASSWORD=your-k8s-password
+# 기본 설정만 (Kubernetes 도구 제거됨)
 
 # 기타 설정
 ENV=development
@@ -29,9 +26,8 @@ LOG_LEVEL=INFO
 ### 🚨 보안 주의사항
 
 **절대 하드코딩하지 말 것:**
-- Kubernetes 접속 정보 (호스트, 사용자, 비밀번호)
+- VLLM 서버 접속 정보
 - API 키나 토큰
-- 데이터베이스 연결 정보
 - 기타 민감한 설정값들
 
 **권장 방법:**
@@ -68,11 +64,9 @@ docker run -d -p 8080:8080 \
 
 ## 🛠️ 기능
 
-### MCP 도구들
-- **시스템**: 시간, 시스템 정보
-- **파일**: 파일 읽기/쓰기, 디렉토리 나열
+### MCP 도구들 (간소화됨)
+- **시간**: 지역별 시간 조회
 - **HTTP**: GET/POST 요청
-- **Kubernetes**: 파드/서비스 조회
 - **VLLM**: 모델 조회, 채팅 API
 - **계산**: 수학 계산
 

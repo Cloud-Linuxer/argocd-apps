@@ -11,7 +11,19 @@ from enum import Enum
 
 import httpx
 from pydantic import BaseModel, Field
-from langchain.schema import BaseMessage, HumanMessage, AIMessage, SystemMessage
+# 간단한 메시지 클래스들
+class BaseMessage:
+    def __init__(self, content: str):
+        self.content = content
+
+class HumanMessage(BaseMessage):
+    pass
+
+class AIMessage(BaseMessage):
+    pass
+
+class SystemMessage(BaseMessage):
+    pass
 
 
 # 로깅 설정
@@ -51,7 +63,7 @@ class Tool(BaseModel):
 class VLLMClient:
     """VLLM API 클라이언트"""
     
-    def __init__(self, base_url: str = "http://192.168.0.2:30081", model: str = "openai/gpt-oss-20b"):
+    def __init__(self, base_url: str, model: str):
         self.base_url = base_url.rstrip('/')
         self.model = model
         self.client = httpx.AsyncClient(timeout=60.0)
@@ -325,5 +337,4 @@ class FunctionCallAgent:
         return history
 
 
-# 필요한 모듈 import
 import asyncio
