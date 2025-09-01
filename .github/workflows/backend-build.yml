@@ -16,8 +16,9 @@ jobs:
       run: |
         sudo mkdir -p /etc/docker
         echo '{"insecure-registries":["harbor-registry.harbor.svc.cluster.local:5000"]}' | sudo tee /etc/docker/daemon.json
-        sudo systemctl restart docker
-        sleep 5
+        sudo pkill dockerd || true
+        sudo dockerd --config-file /etc/docker/daemon.json &
+        sleep 10
     
     - name: Login to Harbor
       run: |
