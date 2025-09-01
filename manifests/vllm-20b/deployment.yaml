@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-gpt-oss-20b
+  labels: { app: vllm }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: vllm } }
+  template:
+    metadata: { labels: { app: vllm } }
+    spec:
+      runtimeClassName: nvidia     # GPU Operator가 만든 런타임
+      hostIPC: true                # docker --ipc=host 대응
+      containers:
+        - name: vllm
+          image: vllm/vllm-openai:latest
+          args:
+            - --model
+            - openai/gpt-oss-20b
+            - --max-model-len
+            - "12090"
+            - --dtype
+            - bfloat16
+            - --tensor-parallel-size
+            - "1"
+            - --gpu-memory-utilization
+            - "0.90"
+          ports:
+            - containerPort: 8000
+          env:
+            - name: NCCL_P2P_LEVEL
+              value: "SYS"         # 1GPU, NVLink 없음
+            - name: VLLM_LOGGING_LEVEL
+              value: "INFO"
+          volumeMounts:
+            - name: hf-cache
+              mountPath: /root/.cache/huggingface
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+      volumes:
+        - name: hf-cache
+          hostPath:
+            path: /home/gpt-oss/.cache/huggingface   # 실제 경로로 교체
+            type: DirectoryOrCreate
