@@ -12,13 +12,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Build image with k3s ctr
+    - name: Login to Harbor
+      run: |
+        echo "Harbor12345" | docker login localhost:30002 -u admin --password-stdin
+    
+    - name: Build and Push to Harbor
       run: |
         cd backend
-        k3s ctr images build -t harbor.local/backend:${{ github.sha }} .
-        k3s ctr images build -t harbor.local/backend:latest .
-    
-    - name: Push to Harbor
-      run: |
-        k3s ctr images push harbor.local/backend:${{ github.sha }}
-        k3s ctr images push harbor.local/backend:latest
+        docker buildx build --platform linux/amd64 \
+          -t localhost:30002/library/backend:${{ github.sha }} \
+          -t localhost:30002/library/backend:latest \
+          --push .
