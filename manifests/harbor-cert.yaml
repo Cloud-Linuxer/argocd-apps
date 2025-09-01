@@ -16,7 +16,9 @@ spec:
   issuerRef:
     name: harbor-selfsigned-issuer
     kind: Issuer
+  commonName: harbor.harbor.svc.cluster.local
   dnsNames:
   - harbor.harbor.svc.cluster.local
   - harbor-registry.harbor.svc.cluster.local
   - harbor.local
+  - harbor-core.harbor.svc.cluster.local
