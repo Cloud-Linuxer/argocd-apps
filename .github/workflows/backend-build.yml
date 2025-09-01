@@ -13,6 +13,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Get version from app.py
+        id: version
+        run: |
+          VERSION=$(grep -o '"version": "[^"]*"' backend/app.py | cut -d'"' -f4)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -32,7 +38,7 @@ jobs:
           context: ./backend
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/backend:${{ github.sha }}
-            ghcr.io/${{ github.repository }}/backend:latest
+            ghcr.io/${{ github.repository_owner }}/argocd-apps/backend:${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/argocd-apps/backend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
