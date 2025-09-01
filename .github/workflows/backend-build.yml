@@ -12,19 +12,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Install buildah
-      run: |
-        sudo apt update
-        sudo apt install -y buildah
-    
-    - name: Build with buildah
+    - name: Build with Docker
       run: |
         cd backend
-        sudo buildah build -t harbor-registry.harbor.svc.cluster.local:5000/library/backend:${{ github.sha }} .
-        sudo buildah build -t harbor-registry.harbor.svc.cluster.local:5000/library/backend:latest .
+        docker build -t harbor-registry.harbor.svc.cluster.local:5000/library/backend:${{ github.sha }} .
+        docker build -t harbor-registry.harbor.svc.cluster.local:5000/library/backend:latest .
     
-    - name: Push to Harbor with buildah
+    - name: Push to Harbor
       run: |
-        sudo buildah login --username admin --password Harbor12345 harbor-registry.harbor.svc.cluster.local:5000 --tls-verify=false
-        sudo buildah push harbor-registry.harbor.svc.cluster.local:5000/library/backend:${{ github.sha }} --tls-verify=false
-        sudo buildah push harbor-registry.harbor.svc.cluster.local:5000/library/backend:latest --tls-verify=false
+        docker login harbor-registry.harbor.svc.cluster.local:5000 -u admin -p Harbor12345
+        docker push harbor-registry.harbor.svc.cluster.local:5000/library/backend:${{ github.sha }}
+        docker push harbor-registry.harbor.svc.cluster.local:5000/library/backend:latest
