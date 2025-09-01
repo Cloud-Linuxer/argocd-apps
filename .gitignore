@@ -1,0 +1,131 @@
+# ArgoCD Apps 프로젝트 .gitignore
+
+# Cursor IDE 설정 (개인 설정)
+.cursor/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Docker
+.dockerignore
+
+# Kubernetes secrets (if any)
+*secret*.yaml
+*secret*.yml
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Backup files
+*.backup
+*.bak
+
+# Local configuration
+*.local
+config.local.*
+settings.local.*
+
+# SSH keys and certificates
+*.pem
+*.key
+id_rsa
+id_rsa.pub
+*.crt
+*.cert
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
+*.cover
+
+# Test artifacts
+.pytest_cache/
+.tox/
+.nox/
+
+# ArgoCD specific
+# (keeping manifests and applications in version control)
+
+# Backend specific files
+backend/__pycache__/
+backend/.env
+backend/logs/
+backend/temp_files/
+backend/conversation_history/
+backend/agent_logs/
+
+# Node.js (if any frontend is added later)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor files
+.vimrc
+.nvimrc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
