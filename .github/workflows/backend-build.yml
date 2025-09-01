@@ -23,6 +23,6 @@ jobs:
     
     - name: Push to Harbor with buildah
       run: |
-        echo "${{ secrets.HARBOR_PASSWORD }}" | sudo buildah login --username "${{ secrets.HARBOR_USERNAME }}" --password-stdin harbor-registry.harbor.svc.cluster.local:5000 --tls-verify=false
+        sudo buildah login --username admin --password Harbor12345 harbor-registry.harbor.svc.cluster.local:5000 --tls-verify=false
         sudo buildah push harbor-registry.harbor.svc.cluster.local:5000/library/backend:${{ github.sha }} --tls-verify=false
         sudo buildah push harbor-registry.harbor.svc.cluster.local:5000/library/backend:latest --tls-verify=false
