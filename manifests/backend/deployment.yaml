@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: harbor.local/backend:v3.0.0
+        image: ghcr.io/cloud-linuxer/backend:3.0.0
         ports:
         - containerPort: 8080
         envFrom:
