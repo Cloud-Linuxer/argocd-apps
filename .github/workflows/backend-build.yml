@@ -14,7 +14,7 @@ jobs:
     
     - name: Login to Harbor
       run: |
-        docker login harbor.harbor.svc.cluster.local -u admin -p Harbor12345
+        echo "${{ secrets.HARBOR_PASSWORD }}" | docker login harbor.harbor.svc.cluster.local -u "${{ secrets.HARBOR_USERNAME }}" --password-stdin
     
     - name: Build and Push to Harbor
       run: |
