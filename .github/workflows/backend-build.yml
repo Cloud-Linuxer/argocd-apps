@@ -20,6 +20,10 @@ jobs:
     
     - name: Push to Harbor
       run: |
-        docker login harbor-registry.harbor.svc.cluster.local:5000 -u admin -p Harbor12345
-        docker push harbor-registry.harbor.svc.cluster.local:5000/library/backend:${{ github.sha }}
-        docker push harbor-registry.harbor.svc.cluster.local:5000/library/backend:latest
+        echo '{"insecure-registries":["192.168.0.2:30002"]}' | sudo tee /etc/docker/daemon.json
+        sudo systemctl restart docker
+        docker login 192.168.0.2:30002 -u admin -p Harbor12345
+        docker tag harbor-registry.harbor.svc.cluster.local:5000/library/backend:${{ github.sha }} 192.168.0.2:30002/library/backend:${{ github.sha }}
+        docker tag harbor-registry.harbor.svc.cluster.local:5000/library/backend:latest 192.168.0.2:30002/library/backend:latest
+        docker push 192.168.0.2:30002/library/backend:${{ github.sha }}
+        docker push 192.168.0.2:30002/library/backend:latest
