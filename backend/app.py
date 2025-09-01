@@ -91,7 +91,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="VLLM Function Call Agent",
     description="VLLM 기반 펑션콜 에이전트 API",
-    version="3.0.0",
+    version="3.0.1",
     lifespan=lifespan
 )
 
