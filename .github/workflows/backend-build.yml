@@ -22,7 +22,7 @@ jobs:
       run: |
         sudo tee /etc/docker/daemon.json > /dev/null <<EOF
         {
-          "insecure-registries": ["192.168.0.2:30002", "192.168.0.2:30003"]
+          "insecure-registries": ["harbor-registry.harbor.svc.cluster.local:5000"]
         }
         EOF
         sudo pkill dockerd
@@ -31,8 +31,6 @@ jobs:
     
     - name: Push to Harbor
       run: |
-        echo "${{ secrets.HARBOR_PASSWORD }}" | docker login 192.168.0.2:30002 -u "${{ secrets.HARBOR_USERNAME }}" --password-stdin
-        docker tag harbor-registry.harbor.svc.cluster.local:5000/library/backend:${{ github.sha }} 192.168.0.2:30002/library/backend:${{ github.sha }}
-        docker tag harbor-registry.harbor.svc.cluster.local:5000/library/backend:latest 192.168.0.2:30002/library/backend:latest
-        docker push 192.168.0.2:30002/library/backend:${{ github.sha }}
-        docker push 192.168.0.2:30002/library/backend:latest
+        echo "${{ secrets.HARBOR_PASSWORD }}" | docker login harbor-registry.harbor.svc.cluster.local:5000 -u "${{ secrets.HARBOR_USERNAME }}" --password-stdin
+        docker push harbor-registry.harbor.svc.cluster.local:5000/library/backend:${{ github.sha }}
+        docker push harbor-registry.harbor.svc.cluster.local:5000/library/backend:latest
