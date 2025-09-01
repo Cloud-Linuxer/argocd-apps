@@ -14,12 +14,12 @@ jobs:
     
     - name: Login to Harbor
       run: |
-        echo "${{ secrets.HARBOR_PASSWORD }}" | docker login harbor-core.harbor.svc.cluster.local -u "${{ secrets.HARBOR_USERNAME }}" --password-stdin
+        echo "${{ secrets.HARBOR_PASSWORD }}" | docker login harbor-registry.harbor.svc.cluster.local:5000 -u "${{ secrets.HARBOR_USERNAME }}" --password-stdin
     
     - name: Build and Push to Harbor
       run: |
         cd backend
         docker buildx build --platform linux/amd64 \
-          -t harbor-core.harbor.svc.cluster.local/library/backend:${{ github.sha }} \
-          -t harbor-core.harbor.svc.cluster.local/library/backend:latest \
+          -t harbor-registry.harbor.svc.cluster.local:5000/library/backend:${{ github.sha }} \
+          -t harbor-registry.harbor.svc.cluster.local:5000/library/backend:latest \
           --push .
