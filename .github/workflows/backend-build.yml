@@ -14,7 +14,7 @@ jobs:
     
     - name: Login to Harbor
       run: |
-        echo "Harbor12345" | docker login localhost:30002 -u admin --password-stdin
+        echo "${{ secrets.HARBOR_PASSWORD }}" | docker login localhost:30002 -u ${{ secrets.HARBOR_USERNAME }} --password-stdin
     
     - name: Build and Push to Harbor
       run: |
