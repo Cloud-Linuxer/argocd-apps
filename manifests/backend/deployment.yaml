@@ -20,7 +20,7 @@ spec:
       - name: ghcr-secret
       containers:
       - name: backend
-        image: ghcr.io/cloud-linuxer/backend:latest
+        image: ghcr.io/cloud-linuxer/backend:3.0.1-amd64
         ports:
         - containerPort: 8080
         envFrom:
