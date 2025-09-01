@@ -20,8 +20,6 @@ jobs:
     
     - name: Push to Harbor
       run: |
-        mkdir -p ~/.docker
-        echo '{"insecure-registries":["harbor-registry.harbor.svc.cluster.local:5000"]}' > ~/.docker/daemon.json
-        docker login harbor-registry.harbor.svc.cluster.local:5000 -u admin -p Harbor12345
+        echo Harbor12345 | docker login harbor-registry.harbor.svc.cluster.local:5000 -u admin --password-stdin --insecure-registry
         docker push harbor-registry.harbor.svc.cluster.local:5000/library/backend:${{ github.sha }}
         docker push harbor-registry.harbor.svc.cluster.local:5000/library/backend:latest
