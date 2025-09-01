@@ -12,6 +12,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Install buildah
+      run: sudo dnf install -y buildah
+    
     - name: Build with buildah
       run: |
         cd backend
