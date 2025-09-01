@@ -11,7 +11,7 @@ def health():
 def info():
     return jsonify({
         "service": "backend-api",
-        "version": "2.0.1",
+        "version": "2.0.2",
         "environment": os.getenv("ENV", "development")
     })
 
