@@ -4,6 +4,7 @@ metadata:
   name: backend
   labels:
     app: backend
+    version: "3.0.0"
 spec:
   replicas: 2
   selector:
@@ -13,22 +14,34 @@ spec:
     metadata:
       labels:
         app: backend
+        version: "3.0.0"
     spec:
       containers:
       - name: backend
-        image: harbor.local/backend:latest
+        image: harbor.local/backend:v3.0.0
         ports:
         - containerPort: 8080
-        env:
-        - name: ENV
-          value: "production"
+        envFrom:
+        - configMapRef:
+            name: backend-config
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
         livenessProbe:
           httpGet:
             path: /health
             port: 8080
           initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
         readinessProbe:
           httpGet:
             path: /health
             port: 8080
-          initialDelaySeconds: 5
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5

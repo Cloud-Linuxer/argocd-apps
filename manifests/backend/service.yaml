@@ -2,10 +2,15 @@ apiVersion: v1
 kind: Service
 metadata:
   name: backend-service
+  labels:
+    app: backend
+    version: "3.0.0"
 spec:
   selector:
     app: backend
   ports:
-  - port: 80
+  - name: http
+    port: 80
     targetPort: 8080
-  type: ClusterIP
+    nodePort: 30082
+  type: NodePort

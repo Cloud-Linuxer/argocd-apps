@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  labels:
+    app: backend
+data:
+  # 환경 설정
+  ENV: "production"
+  PORT: "8080"
+  LOG_LEVEL: "INFO"
+  
+  # VLLM 설정 (k3s 클러스터 내 VLLM 서비스)
+  VLLM_BASE_URL: "http://192.168.0.2:30081"
+  VLLM_MODEL: "openai/gpt-oss-20b"
+  VLLM_MAX_TOKENS: "1000"
+  VLLM_TEMPERATURE: "0.7"
+  VLLM_TIMEOUT: "60"
+  
+  # 에이전트 설정
+  AGENT_MAX_ITERATIONS: "10"
+  AGENT_TIMEOUT: "300"
+  
+  # MCP 도구 설정
+  MCP_TOOLS_ENABLED: "true"
