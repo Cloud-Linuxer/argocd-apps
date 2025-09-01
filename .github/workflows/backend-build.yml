@@ -20,14 +20,8 @@ jobs:
     
     - name: Configure Docker for Harbor
       run: |
-        sudo tee /etc/docker/daemon.json > /dev/null <<EOF
-        {
-          "insecure-registries": ["harbor-registry.harbor.svc.cluster.local:5000"]
-        }
-        EOF
-        sudo pkill dockerd
-        sudo /usr/bin/dockerd &
-        sleep 5
+        sudo mkdir -p /etc/docker
+        echo '{"insecure-registries":["harbor-registry.harbor.svc.cluster.local:5000"]}' | sudo tee /etc/docker/daemon.json
     
     - name: Push to Harbor
       run: |
