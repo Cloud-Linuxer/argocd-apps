@@ -17,12 +17,14 @@ jobs:
         id: prep
         shell: bash
         run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}/backend" >> "$GITHUB_OUTPUT"
+             echo "iamge=${GITHUB_REPOSITORY,,}"
 
       - name: Get version from app.py
         id: version
         run: |
           VERSION=$(grep -o '"version": "[^"]*"' backend/app.py | cut -d'"' -f4)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION"
 
       - name: Login to GHCR
         uses: docker/login-action@v3
