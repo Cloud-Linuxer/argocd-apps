@@ -16,7 +16,7 @@ jobs:
       - name: Compute image name (lowercase)
         id: prep
         shell: bash
-        run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}/backend" >> "$GITHUB_OUTPUT"
+        run: echo "image=ghcr.io/cloud-linuxer/argocd-apps/backend" >> "$GITHUB_OUTPUT"
 
       - name: Get version from app.py
         id: version
