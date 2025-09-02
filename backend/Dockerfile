@@ -6,6 +6,9 @@ RUN apt-get update && apt-get install -y \
     openssh-client \
     curl \
     jq \
+    gcc \
+    g++ \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # 작업 디렉토리 설정

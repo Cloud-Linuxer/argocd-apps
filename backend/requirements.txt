@@ -4,8 +4,6 @@ pydantic==2.5.0
 pydantic-settings==2.1.0
 httpx==0.25.2
 python-dotenv==1.0.0
-<<<<<<< Current (Your changes)
-=======
-langchain>=0.2.10
-langchain-openai>=0.1.7
->>>>>>> Incoming (Background Agent changes)
+langchain==0.2.16
+langchain-openai==0.1.23
+langchain-core==0.2.38
