@@ -18,7 +18,7 @@ try:
     # LangChain integration (optional at import time)
     from langchain_openai import ChatOpenAI
     from langchain.agents import AgentExecutor, create_react_agent
-    from langchain_core.prompts import ChatPromptTemplate
+    from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
     from langchain.tools import tool
     _LANGCHAIN_AVAILABLE = True
 except Exception:
@@ -78,11 +78,11 @@ async def startup() -> None:
         )
 
         # Wrap MCPTools methods as LangChain tools
-        @tool("get_current_time", return_direct=False)
+        @tool("get_current_time")
         async def lc_get_current_time(timezone: str = "Asia/Seoul") -> str:
             return await mcp_tools.get_current_time(timezone=timezone)
 
-        @tool("fetch_url", return_direct=False)
+        @tool("fetch_url")
         async def lc_fetch_url(url: str) -> str:
             return await mcp_tools.fetch_url(url=url)
 
@@ -91,7 +91,7 @@ async def startup() -> None:
         prompt = ChatPromptTemplate.from_messages([
             ("system", SYSTEM_PROMPT + " Use tools when helpful. Answer concisely."),
             ("human", "{input}"),
-            ("placeholder", "{agent_scratchpad}"),
+            MessagesPlaceholder(variable_name="agent_scratchpad"),
         ])
 
         langchain_agent = AgentExecutor(
