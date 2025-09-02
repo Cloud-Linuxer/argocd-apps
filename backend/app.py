@@ -72,24 +72,55 @@ async def chat(request: ChatRequest) -> ChatResponse:
         if "tool_calls" in msg:
             messages.append(msg)
             for call in msg["tool_calls"]:
-                name = call["function"]["name"]
-                args = call["function"].get("arguments") or "{}"
-                params = json.loads(args)
-                func = getattr(mcp_tools, name, None)
-                if not func:
-                    result = f"Unknown tool: {name}"
-                else:
-                    if asyncio.iscoroutinefunction(func):
-                        result = await func(**params)
+                try:
+                    name = call["function"]["name"]
+                    args = call["function"].get("arguments") or "{}"
+                    call_id = call.get("id", "unknown")
+                    
+                    # JSON 파싱 안전하게 처리
+                    try:
+                        params = json.loads(args)
+                    except json.JSONDecodeError as e:
+                        result = f"Invalid JSON arguments: {e}"
+                        messages.append({
+                            "role": "tool",
+                            "tool_call_id": call_id,
+                            "content": result,
+                        })
+                        continue
+                    
+                    func = getattr(mcp_tools, name, None)
+                    if not func:
+                        result = f"Unknown tool: {name}"
                     else:
-                        result = func(**params)
-                messages.append(
-                    {
+                        try:
+                            if asyncio.iscoroutinefunction(func):
+                                result = await func(**params)
+                            else:
+                                result = func(**params)
+                            
+                            # 결과를 문자열로 변환
+                            if not isinstance(result, str):
+                                result = str(result)
+                                
+                        except Exception as e:
+                            logger.error(f"Tool execution error for {name}: {e}")
+                            result = f"Tool execution failed: {e}"
+                    
+                    messages.append({
                         "role": "tool",
-                        "tool_call_id": call["id"],
+                        "tool_call_id": call_id,
                         "content": result,
-                    }
-                )
+                    })
+                    
+                except Exception as e:
+                    logger.error(f"Tool call processing error: {e}")
+                    # 기본 오류 응답 추가
+                    messages.append({
+                        "role": "tool", 
+                        "tool_call_id": call.get("id", "error"),
+                        "content": f"Tool call processing failed: {e}"
+                    })
             followup = await vllm_client.chat(messages)
             final = followup["choices"][0]["message"].get("content", "")
             return ChatResponse(response=final)
@@ -98,6 +129,29 @@ async def chat(request: ChatRequest) -> ChatResponse:
     except Exception as e:
         logger.error(f"Chat error: {e}")
         raise HTTPException(status_code=500, detail="Chat processing failed")
+
+
+@app.get("/api/tools")
+async def get_tools() -> dict:
+    """등록된 도구 목록 반환"""
+    if not mcp_tools:
+        raise HTTPException(status_code=500, detail="Server not initialized")
+    
+    schemas = mcp_tools.get_schemas()
+    tools_info = []
+    
+    for schema in schemas:
+        func_info = schema["function"]
+        tools_info.append({
+            "name": func_info["name"],
+            "description": func_info["description"],
+            "parameters": func_info.get("parameters", {})
+        })
+    
+    return {
+        "tools": tools_info,
+        "count": len(tools_info)
+    }
 
 
 @app.get("/health")
