@@ -2,6 +2,11 @@ import streamlit as st
 import os
 from api_client import BackendClient
 
+# Streamlit 프로덕션 설정
+os.environ["STREAMLIT_SERVER_FILE_WATCHER_TYPE"] = "none"
+os.environ["STREAMLIT_BROWSER_GATHER_USAGE_STATS"] = "false"
+os.environ["STREAMLIT_SERVER_HEADLESS"] = "true"
+
 # 페이지 설정
 st.set_page_config(
     page_title="VLLM Agent Chat",
