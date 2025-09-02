@@ -25,10 +25,8 @@ spec:
             - "1"
             - --gpu-memory-utilization
             - "0.90"
-            # ★ 핵심: flash-attn 대신 flashinfer 사용 강제
-            - --attention-backend
-            - flashinfer
-            # (옵션) 모델 다운로드 캐시를 볼륨으로 고정
+            # (--attention-backend 제거; env로 설정)
+            # (옵션) 모델 캐시 고정
             - --download-dir
             - /models
           ports:
@@ -38,7 +36,12 @@ spec:
               value: "SYS"
             - name: VLLM_LOGGING_LEVEL
               value: "INFO"
-            # (옵션) 파이토치 메모리 단편화 방지
+            # ★ 핵심: FlashInfer 백엔드/샘플러 강제
+            - name: VLLM_ATTENTION_BACKEND
+              value: "FLASHINFER"
+            - name: VLLM_USE_FLASHINFER_SAMPLER
+              value: "1"
+            # (권장) 파이토치 메모리 조각화 완화
             - name: PYTORCH_CUDA_ALLOC_CONF
               value: "expandable_segments:True"
           volumeMounts:
@@ -51,10 +54,6 @@ spec:
               nvidia.com/gpu: 1
       volumes:
         - name: hf-cache
-          hostPath:
-            path: /home/gpt-oss/.cache/huggingface
-            type: DirectoryOrCreate
+          hostPath: { path: /home/gpt-oss/.cache/huggingface, type: DirectoryOrCreate }
         - name: models
-          hostPath:
-            path: /home/gpt-oss/models
-            type: DirectoryOrCreate
+          hostPath: { path: /home/gpt-oss/models, type: DirectoryOrCreate }
