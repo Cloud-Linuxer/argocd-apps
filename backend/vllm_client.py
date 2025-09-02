@@ -36,9 +36,8 @@ class VLLMClient:
         }
         if tools:
             payload["tools"] = tools
-            # Only include tool_choice when explicitly provided
-            if tool_choice is not None:
-                payload["tool_choice"] = tool_choice
+            # Many OSS models require an explicit tool_choice
+            payload["tool_choice"] = tool_choice if tool_choice is not None else "auto"
 
         logger.debug("vLLM payload: %s", {k: (v if k != "messages" else [m.get("role") for m in v]) for k, v in payload.items()})
 
@@ -53,21 +52,38 @@ class VLLMClient:
             status = exc.response.status_code if exc.response is not None else None
             body = exc.response.text if exc.response is not None else ""
             logger.error("vLLM HTTP error %s: %s", status if status is not None else "?", body)
-            # Fallback: retry without tools if server errors and tools were included
+            # Fallback: retry using legacy 'functions' field if server errors with tools
             if status and status >= 500 and "tools" in payload:
-                logger.warning("Retrying without tools due to server error %s", status)
-                fallback_payload = {
+                logger.warning(
+                    "Retrying with legacy 'functions' param due to server error %s", status
+                )
+                legacy_payload = {
                     k: v for k, v in payload.items() if k not in {"tools", "tool_choice"}
                 }
-                logger.debug("vLLM fallback payload: %s", {k: (v if k != "messages" else [m.get("role") for m in v]) for k, v in fallback_payload.items()})
+                legacy_payload["functions"] = [t["function"] for t in payload["tools"]]
+                tc = payload.get("tool_choice")
+                if tc not in (None, "auto"):
+                    if isinstance(tc, dict) and "function" in tc:
+                        legacy_payload["function_call"] = {"name": tc["function"]["name"]}
+                    else:
+                        legacy_payload["function_call"] = tc
+                logger.debug(
+                    "vLLM legacy payload: %s",
+                    {k: (v if k != "messages" else [m.get("role") for m in v]) for k, v in legacy_payload.items()},
+                )
                 response = await self.client.post(
                     f"{self.base_url}/v1/chat/completions",
-                    json=fallback_payload,
+                    json=legacy_payload,
                     headers={"Content-Type": "application/json"},
                 )
                 response.raise_for_status()
             else:
-                raise
+                raise RuntimeError(
+                    f"vLLM server returned HTTP {status}: {body}"
+                ) from exc
+        except httpx.RequestError as exc:
+            logger.error("vLLM request failed: %s", exc)
+            raise RuntimeError(f"Failed to call vLLM server: {exc}") from exc
         data = response.json()
         logger.debug("vLLM response keys: %s", list(data.keys()))
         return data
