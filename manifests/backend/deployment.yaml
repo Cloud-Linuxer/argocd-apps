@@ -6,7 +6,7 @@ metadata:
     app: backend
     version: "3.0.2"
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: backend
