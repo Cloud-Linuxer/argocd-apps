@@ -8,7 +8,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
     steps:
       - uses: actions/checkout@v4
@@ -18,10 +18,10 @@ jobs:
         shell: bash
         run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}/backend" >> "$GITHUB_OUTPUT"
 
-      - name: Get version from app.py
+      - name: Get version
         id: version
         run: |
-          VERSION=$(grep -o '"version": "[^"]*"' backend/app.py | cut -d'"' -f4)
+          VERSION=$(cat backend/VERSION)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Login to GHCR
@@ -47,8 +47,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Verify image push
+      - name: Update manifest
         run: |
-          echo "Verifying image was pushed successfully..."
-          docker run --rm gcr.io/go-containerregistry/crane:debug \
-            manifest ${{ steps.prep.outputs.image }}:${{ steps.version.outputs.version }} || echo "Failed to verify image"
+          sed -i "s|image: ghcr.io/.*/backend:.*|image: ${{ steps.prep.outputs.image }}:${{ steps.version.outputs.version }}-amd64|g" manifests/backend/deployment.yaml
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add manifests/backend/deployment.yaml
+          git commit -m "Update backend image to ${{ steps.version.outputs.version }}" || exit 0
+          git push
