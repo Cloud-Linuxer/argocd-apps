@@ -20,7 +20,7 @@ spec:
       - name: ghcr-secret
       containers:
       - name: backend
-        image: ghcr.io/cloud-linuxer/argocd-apps/backend:3.0.6-amd64
+        image: ghcr.io/cloud-linuxer/argocd-apps/backend:3.0.7-amd64
         ports:
         - containerPort: 8080
         envFrom:
