@@ -80,10 +80,12 @@ async def startup() -> None:
         # Wrap MCPTools methods as LangChain tools
         @tool("get_current_time")
         async def lc_get_current_time(timezone: str = "Asia/Seoul") -> str:
+            """Get current time for a timezone (default Asia/Seoul)."""
             return await mcp_tools.get_current_time(timezone=timezone)
 
         @tool("fetch_url")
         async def lc_fetch_url(url: str) -> str:
+            """Fetch the text content of a URL (first 1000 chars)."""
             return await mcp_tools.fetch_url(url=url)
 
         tools = [lc_get_current_time, lc_fetch_url]
