@@ -60,14 +60,49 @@ async def shutdown() -> None:
         await mcp_tools.close()
 
 
+SYSTEM_PROMPT = (
+    "You are a helpful assistant with tool-use abilities. "
+    "When the user asks for factual, current, or external information, prefer using tools. "
+    "For time queries, call get_current_time with an appropriate timezone. "
+    "Always return concise answers."
+)
+
+
+def _looks_like_time_query(text: str) -> bool:
+    t = text.lower()
+    keywords = [
+        "time",
+        "현재시간",
+        "지금 시간",
+        "몇 시",
+        "몇시",
+        "what time",
+        "현재 시각",
+    ]
+    return any(k in t for k in keywords)
+
+
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest) -> ChatResponse:
     if not vllm_client or not mcp_tools:
         raise HTTPException(status_code=500, detail="Server not initialized")
-    messages: List[Dict[str, str]] = [{"role": "user", "content": request.message}]
+    messages: List[Dict[str, str]] = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": request.message},
+    ]
     try:
-        response = await vllm_client.chat(messages, tools=mcp_tools.get_schemas())
+        tool_choice = None
+        if _looks_like_time_query(request.message):
+            # Force the model to call the time tool
+            tool_choice = {"type": "function", "function": {"name": "get_current_time"}}
+
+        response = await vllm_client.chat(
+            messages,
+            tools=mcp_tools.get_schemas(),
+            tool_choice=tool_choice,
+        )
         msg = response["choices"][0]["message"]
+        logger.debug("model message: %s", msg)
 
         if "tool_calls" in msg:
             messages.append(msg)
@@ -121,6 +156,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
                         "tool_call_id": call.get("id", "error"),
                         "content": f"Tool call processing failed: {e}"
                     })
+            logger.debug("messages before follow-up: %s", [m.get("role") for m in messages])
             followup = await vllm_client.chat(messages)
             final = followup["choices"][0]["message"].get("content", "")
             return ChatResponse(response=final)

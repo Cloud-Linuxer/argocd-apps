@@ -26,6 +26,7 @@ class VLLMClient:
         self,
         messages: List[Dict[str, str]],
         tools: Optional[List[Dict[str, Any]]] = None,
+        tool_choice: Optional[Any] = None,
     ) -> Dict[str, Any]:
         payload: Dict[str, Any] = {
             "model": self.model,
@@ -35,14 +36,20 @@ class VLLMClient:
         }
         if tools:
             payload["tools"] = tools
-            payload["tool_choice"] = "auto"
+            # Respect explicit tool_choice if provided; otherwise allow auto
+            payload["tool_choice"] = tool_choice if tool_choice is not None else "auto"
+
+        logger.debug("vLLM payload: %s", {k: (v if k != "messages" else [m.get("role") for m in v]) for k, v in payload.items()})
+
         response = await self.client.post(
             f"{self.base_url}/v1/chat/completions",
             json=payload,
             headers={"Content-Type": "application/json"},
         )
         response.raise_for_status()
-        return response.json()
+        data = response.json()
+        logger.debug("vLLM response keys: %s", list(data.keys()))
+        return data
 
     async def close(self) -> None:
         await self.client.aclose()
