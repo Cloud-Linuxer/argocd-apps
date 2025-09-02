@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: ghcr.io/cloud-linuxer/argocd-apps/frontend:3.0.7-amd64
+        image: ghcr.io/cloud-linuxer/argocd-apps/frontend:3.0.8-amd64
         ports:
         - containerPort: 8501
         envFrom:
