@@ -4,7 +4,6 @@ metadata:
   name: backend
   labels:
     app: backend
-    version: "3.0.6"
 spec:
   replicas: 1
   selector:
@@ -14,7 +13,6 @@ spec:
     metadata:
       labels:
         app: backend
-        version: "3.0.6"
     spec:
       imagePullSecrets:
       - name: ghcr-secret
