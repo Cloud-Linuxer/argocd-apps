@@ -141,6 +141,23 @@ def _looks_like_time_query(text: str) -> bool:
 async def chat(request: ChatRequest) -> ChatResponse:
     if not vllm_client or not mcp_tools:
         raise HTTPException(status_code=500, detail="Server not initialized")
+    
+    # For gpt-oss models, use harmony format without tools parameter
+    if "gpt-oss" in vllm_client.model.lower():
+        messages: List[Dict[str, str]] = [
+            {"role": "system", "content": SYSTEM_PROMPT + " You have access to tools like get_current_time and fetch_url. Use them when needed by describing your actions in natural language."},
+            {"role": "user", "content": request.message},
+        ]
+        try:
+            # Call without tools parameter for gpt-oss models
+            response = await vllm_client.chat(messages)
+            msg = response["choices"][0]["message"]
+            return ChatResponse(response=msg.get("content", ""))
+        except Exception as e:
+            logger.error(f"Chat error: {e}")
+            raise HTTPException(status_code=500, detail="Chat processing failed")
+    
+    # Standard OpenAI function calling for other models
     messages: List[Dict[str, str]] = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": request.message},
@@ -240,6 +257,28 @@ async def agent_chat(request: ChatRequest) -> ChatResponse:
     except Exception as e:
         logger.error(f"Agent chat error: {e}")
         raise HTTPException(status_code=500, detail="Agent chat failed")
+
+
+@app.post("/api/gpt_oss_chat", response_model=ChatResponse)
+async def gpt_oss_chat(request: ChatRequest) -> ChatResponse:
+    """gpt-oss 모델 전용 채팅 (내장 도구 사용)"""
+    if not vllm_client:
+        raise HTTPException(status_code=500, detail="Server not initialized")
+    
+    # gpt-oss harmony format - simple messages without tools parameter
+    messages = [
+        {"role": "system", "content": "You are Galaxy, a helpful assistant with built-in tool capabilities. When users ask for current information, time, or web content, use your built-in tools naturally. 너의 이름은 갤럭시이고, 사용자의 의도에 따라 친절하게 답변을 한다."},
+        {"role": "user", "content": request.message}
+    ]
+    
+    try:
+        # Call vLLM without tools parameter for gpt-oss
+        response = await vllm_client.chat(messages)
+        msg = response["choices"][0]["message"]
+        return ChatResponse(response=msg.get("content", ""))
+    except Exception as e:
+        logger.error(f"GPT-OSS chat error: {e}")
+        raise HTTPException(status_code=500, detail="GPT-OSS chat failed")
 
 
 @app.get("/api/tools")

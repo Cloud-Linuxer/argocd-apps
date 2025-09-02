@@ -49,17 +49,22 @@ python app.py
 ### 🧪 빠른 사용 예시 (cURL)
 
 ```bash
-# 1) LangChain 에이전트 대화 (도구 사용 자동 판단)
+# 1) gpt-oss 모델 전용 채팅 (내장 도구 사용) - 권장
+curl -sS -X POST http://localhost:8080/api/gpt_oss_chat \
+  -H 'Content-Type: application/json' \
+  -d '{"message": "지금 서울 시간 알려줘"}' | jq .
+
+# 2) LangChain 에이전트 대화 (도구 사용 자동 판단)
 curl -sS -X POST http://localhost:8080/api/agent_chat \
   -H 'Content-Type: application/json' \
   -d '{"message": "지금 서울 시간 알려줘"}' | jq .
 
-# 2) 도구 강제 없이 함수콜 경로 (기존 엔드포인트)
+# 3) 표준 함수콜 경로 (gpt-oss는 자동 harmony 모드)
 curl -sS -X POST http://localhost:8080/api/chat \
   -H 'Content-Type: application/json' \
   -d '{"message": "현재시간"}' | jq .
 
-# 3) 등록된 도구 목록 확인
+# 4) 등록된 도구 목록 확인
 curl -sS http://localhost:8080/api/tools | jq .
 ```
 
@@ -94,7 +99,8 @@ docker run -d -p 8080:8080 \
 ### API 엔드포인트
 - `GET /health` - 서비스 상태
 - `GET /api/tools` - 등록된 도구 목록
-- `POST /api/chat` - 에이전트와 채팅
+- `POST /api/gpt_oss_chat` - gpt-oss 모델 전용 채팅 (내장 도구 사용) ⭐ 권장
+- `POST /api/chat` - 표준 에이전트와 채팅 (gpt-oss는 harmony 모드)
 - `POST /api/agent_chat` - LangChain ReAct 에이전트와 채팅 (vLLM OpenAI API 사용)
 - `GET /api/conversation` - 대화 기록
 - `DELETE /api/conversation` - 대화 기록 초기화

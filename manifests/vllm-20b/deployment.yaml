@@ -13,10 +13,11 @@ spec:
       hostIPC: true                # docker --ipc=host 대응
       containers:
         - name: vllm
-          image: vllm/vllm-openai:latest
+          image: vllm/vllm-openai:v0.10.1-gptoss
           args:
             - --model
             - openai/gpt-oss-20b
+            - --enable-harmony
             - --max-model-len
             - "12090"
             - --dtype
