@@ -158,7 +158,7 @@ async def health():
         return HealthResponse(
             status="healthy",
             service="vllm-function-call-agent",
-            version="3.0.0",
+            version="3.0.3",
             vllm_connected=vllm_connected,
             tools_count=tools_count
         )
@@ -177,7 +177,7 @@ async def info():
     
     return {
         "service": "vllm-function-call-agent",
-        "version": "3.0.0",
+        "version": "3.0.3",
         "environment": settings.env,
         "vllm_base_url": vllm_config["base_url"],
         "vllm_model": vllm_config["model"]
