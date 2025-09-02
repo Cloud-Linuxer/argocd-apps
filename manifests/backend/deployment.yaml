@@ -4,7 +4,7 @@ metadata:
   name: backend
   labels:
     app: backend
-    version: "3.0.4"
+    version: "3.0.5"
 spec:
   replicas: 1
   selector:
@@ -14,13 +14,13 @@ spec:
     metadata:
       labels:
         app: backend
-        version: "3.0.4"
+        version: "3.0.5"
     spec:
       imagePullSecrets:
       - name: ghcr-secret
       containers:
       - name: backend
-        image: ghcr.io/cloud-linuxer/argocd-apps/backend:3.0.4-amd64
+        image: ghcr.io/cloud-linuxer/argocd-apps/backend:3.0.5-amd64
         ports:
         - containerPort: 8080
         envFrom:
