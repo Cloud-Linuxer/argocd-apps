@@ -131,6 +131,29 @@ async def chat(request: ChatRequest) -> ChatResponse:
         raise HTTPException(status_code=500, detail="Chat processing failed")
 
 
+@app.get("/api/tools")
+async def get_tools() -> dict:
+    """등록된 도구 목록 반환"""
+    if not mcp_tools:
+        raise HTTPException(status_code=500, detail="Server not initialized")
+    
+    schemas = mcp_tools.get_schemas()
+    tools_info = []
+    
+    for schema in schemas:
+        func_info = schema["function"]
+        tools_info.append({
+            "name": func_info["name"],
+            "description": func_info["description"],
+            "parameters": func_info.get("parameters", {})
+        })
+    
+    return {
+        "tools": tools_info,
+        "count": len(tools_info)
+    }
+
+
 @app.get("/health")
 async def health() -> dict:
     return {"status": "ok"}
