@@ -38,14 +38,6 @@ class ChatResponse(BaseModel):
 async def startup() -> None:
     global vllm_client
     config = get_vllm_config()
-    vllm_client = VLLMClient(
-        config["base_url"],
-        config["model"],
-        max_tokens=config.get("max_tokens", 1000),
-        temperature=config.get("temperature", 0.7),
-        timeout=config.get("timeout", 60),
-    )
-
 
 @app.on_event("shutdown")
 async def shutdown() -> None:
