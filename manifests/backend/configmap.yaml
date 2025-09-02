@@ -16,10 +16,3 @@ data:
   VLLM_MAX_TOKENS: "1000"
   VLLM_TEMPERATURE: "0.7"
   VLLM_TIMEOUT: "60"
-  
-  # 에이전트 설정
-  AGENT_MAX_ITERATIONS: "10"
-  AGENT_TIMEOUT: "300"
-  
-  # MCP 도구 설정
-  MCP_TOOLS_ENABLED: "true"
