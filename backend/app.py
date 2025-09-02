@@ -38,8 +38,6 @@ class ChatResponse(BaseModel):
 async def startup() -> None:
     global vllm_client
     config = get_vllm_config()
-    vllm_client = VLLMClient(config["base_url"], config["model"])
-
 
 @app.on_event("shutdown")
 async def shutdown() -> None:

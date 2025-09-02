@@ -12,7 +12,7 @@ data:
   
   # VLLM 설정 (k3s 클러스터 내 VLLM 서비스)
   VLLM_BASE_URL: "http://vllm-service:8000"
-  VLLM_MODEL: "openai/gpt-oss-20b"
+  VLLM_MODEL: "gpt-oss-20b"
   VLLM_MAX_TOKENS: "1000"
   VLLM_TEMPERATURE: "0.7"
   VLLM_TIMEOUT: "60"

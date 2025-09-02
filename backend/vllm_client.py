@@ -8,11 +8,6 @@ logger = logging.getLogger(__name__)
 class VLLMClient:
     """VLLM API 클라이언트"""
 
-    def __init__(self, base_url: str, model: str):
-        self.base_url = base_url.rstrip('/')
-        self.model = model
-        self.client = httpx.AsyncClient(timeout=60.0)
-
     async def chat(self, message: str) -> str:
         payload: Dict[str, Any] = {
             "model": self.model,
