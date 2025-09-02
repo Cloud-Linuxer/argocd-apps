@@ -6,3 +6,4 @@ metadata:
     app: frontend
 data:
   BACKEND_URL: "http://backend-service"
+  STREAMLIT_SERVER_FILE_WATCHER_TYPE: "none"
