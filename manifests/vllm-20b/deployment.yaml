@@ -32,6 +32,10 @@ spec:
               value: "SYS"         # 1GPU, NVLink 없음
             - name: VLLM_LOGGING_LEVEL
               value: "INFO"
+            - name: VLLM_ATTENTION_BACKEND
+              value: FLASHINFERENCE
+            - name: USE_FSDP
+              value: "true"
           volumeMounts:
             - name: hf-cache
               mountPath: /root/.cache/huggingface
