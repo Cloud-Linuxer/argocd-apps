@@ -9,8 +9,8 @@ spec:
   template:
     metadata: { labels: { app: vllm } }
     spec:
-      runtimeClassName: nvidia     # GPU Operator가 만든 런타임
-      hostIPC: true                # docker --ipc=host 대응
+      runtimeClassName: nvidia
+      hostIPC: true
       containers:
         - name: vllm
           image: vllm/vllm-openai:gptoss
@@ -25,25 +25,36 @@ spec:
             - "1"
             - --gpu-memory-utilization
             - "0.90"
+            # ★ 핵심: flash-attn 대신 flashinfer 사용 강제
+            - --attention-backend
+            - flashinfer
+            # (옵션) 모델 다운로드 캐시를 볼륨으로 고정
+            - --download-dir
+            - /models
           ports:
             - containerPort: 8000
           env:
             - name: NCCL_P2P_LEVEL
-              value: "SYS"         # 1GPU, NVLink 없음
+              value: "SYS"
             - name: VLLM_LOGGING_LEVEL
               value: "INFO"
-            - name: VLLM_ATTENTION_BACKEND
-              value: FLASHINFERENCE
-            - name: USE_FSDP
-              value: "true"
+            # (옵션) 파이토치 메모리 단편화 방지
+            - name: PYTORCH_CUDA_ALLOC_CONF
+              value: "expandable_segments:True"
           volumeMounts:
             - name: hf-cache
               mountPath: /root/.cache/huggingface
+            - name: models
+              mountPath: /models
           resources:
             limits:
               nvidia.com/gpu: 1
       volumes:
         - name: hf-cache
           hostPath:
-            path: /home/gpt-oss/.cache/huggingface   # 실제 경로로 교체
+            path: /home/gpt-oss/.cache/huggingface
+            type: DirectoryOrCreate
+        - name: models
+          hostPath:
+            path: /home/gpt-oss/models
             type: DirectoryOrCreate
