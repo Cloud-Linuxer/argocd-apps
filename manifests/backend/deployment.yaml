@@ -14,13 +14,13 @@ spec:
     metadata:
       labels:
         app: backend
-        version: "3.0.2"
+        version: "3.0.3"
     spec:
       imagePullSecrets:
       - name: ghcr-secret
       containers:
       - name: backend
-        image: ghcr.io/cloud-linuxer/backend:3.0.2-amd64
+        image: ghcr.io/cloud-linuxer/backend:3.0.3-amd64
         ports:
         - containerPort: 8080
         envFrom:
