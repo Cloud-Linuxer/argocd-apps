@@ -25,7 +25,7 @@ ENV PYTHONUNBUFFERED=1
 # 기본 환경변수 (민감한 정보는 런타임에 설정)
 ENV ENV=production
 ENV PORT=8080
-ENV LOG_LEVEL=INFO
+ENV LOG_LEVEL=DEBUG
 
 # 포트 노출
 EXPOSE 8080
