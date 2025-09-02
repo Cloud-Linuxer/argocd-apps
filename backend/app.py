@@ -91,7 +91,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="VLLM Function Call Agent",
     description="VLLM 기반 펑션콜 에이전트 API",
-    version="3.0.3",
+    version="3.0.4",
     lifespan=lifespan
 )
 
@@ -158,7 +158,7 @@ async def health():
         return HealthResponse(
             status="healthy",
             service="vllm-function-call-agent",
-            version="3.0.3",
+            version="3.0.4",
             vllm_connected=vllm_connected,
             tools_count=tools_count
         )
@@ -177,7 +177,7 @@ async def info():
     
     return {
         "service": "vllm-function-call-agent",
-        "version": "3.0.3",
+        "version": "3.0.4",
         "environment": settings.env,
         "vllm_base_url": vllm_config["base_url"],
         "vllm_model": vllm_config["model"]
