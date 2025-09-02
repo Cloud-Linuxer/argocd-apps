@@ -8,7 +8,7 @@ data:
   # 환경 설정
   ENV: "production"
   PORT: "8080"
-  LOG_LEVEL: "INFO"
+  LOG_LEVEL: "DEBUG"
   
   # VLLM 설정 (k3s 클러스터 내 VLLM 서비스)
   VLLM_BASE_URL: "http://vllm-service:8000"

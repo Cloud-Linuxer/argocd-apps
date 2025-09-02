@@ -9,11 +9,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from config import get_vllm_config
+from config import get_vllm_config, get_settings
 from vllm_client import VLLMClient
 from mcp_tools import MCPTools
 
-logging.basicConfig(level=logging.INFO)
+settings = get_settings()
+_level_name = (settings.log_level or "INFO").upper()
+_level = getattr(logging, _level_name, logging.INFO)
+logging.basicConfig(level=_level, format=settings.log_format)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="VLLM Chat Backend", version="3.0.6")
