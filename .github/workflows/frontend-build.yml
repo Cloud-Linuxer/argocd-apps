@@ -38,10 +38,9 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64  # ARM64 제거로 빌드 시간 단축
           push: true
           tags: |
-            ${{ steps.prep.outputs.image }}:${{ steps.version.outputs.version }}
             ${{ steps.prep.outputs.image }}:${{ steps.version.outputs.version }}-amd64
             ${{ steps.prep.outputs.image }}:latest
           cache-from: type=gha
