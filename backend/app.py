@@ -91,7 +91,7 @@ async def startup() -> None:
         tools = [lc_get_current_time, lc_fetch_url]
 
         prompt = ChatPromptTemplate.from_messages([
-            ("system", SYSTEM_PROMPT + " Use tools when helpful. Answer concisely."),
+            ("system", SYSTEM_PROMPT + " Use tools when helpful. Answer concisely.\n\nYou have access to the following tools:\n{tools}\n\nUse the following format:\n\nQuestion: the input question you must answer\nThought: you should always think about what to do\nAction: the action to take, should be one of [{tool_names}]\nAction Input: the input to the action\nObservation: the result of the action\n... (this Thought/Action/Action Input/Observation can repeat N times)\nThought: I now know the final answer\nFinal Answer: the final answer to the original input question"),
             ("human", "{input}"),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ])
