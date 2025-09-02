@@ -12,6 +12,17 @@ from pydantic import BaseModel, Field
 from config import get_vllm_config, get_settings
 from vllm_client import VLLMClient
 from mcp_tools import MCPTools
+from typing import Any
+
+try:
+    # LangChain integration (optional at import time)
+    from langchain_openai import ChatOpenAI
+    from langchain.agents import AgentExecutor, create_react_agent
+    from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+    from langchain.tools import tool
+    _LANGCHAIN_AVAILABLE = True
+except Exception:
+    _LANGCHAIN_AVAILABLE = False
 
 settings = get_settings()
 _level_name = (settings.log_level or "INFO").upper()
@@ -31,6 +42,7 @@ app.add_middleware(
 
 vllm_client: Optional[VLLMClient] = None
 mcp_tools: Optional[MCPTools] = None
+langchain_agent: Optional[Any] = None
 
 
 class ChatRequest(BaseModel):
@@ -43,7 +55,7 @@ class ChatResponse(BaseModel):
 
 @app.on_event("startup")
 async def startup() -> None:
-    global vllm_client, mcp_tools
+    global vllm_client, mcp_tools, langchain_agent
     config = get_vllm_config()
     vllm_client = VLLMClient(
         config["base_url"],
@@ -53,6 +65,42 @@ async def startup() -> None:
         timeout=config.get("timeout", 60),
     )
     mcp_tools = MCPTools()
+    # Initialize LangChain agent backed by vLLM's OpenAI-compatible API
+    if _LANGCHAIN_AVAILABLE:
+        # vLLM exposes OpenAI-compatible API, so set base_url and dummy key
+        llm = ChatOpenAI(
+            api_key="unused",
+            base_url=f"{config['base_url']}/v1",
+            model=config["model"],
+            temperature=config.get("temperature", 0.7),
+            max_tokens=config.get("max_tokens", 1000),
+            timeout=config.get("timeout", 60),
+        )
+
+        # Wrap MCPTools methods as LangChain tools
+        @tool("get_current_time")
+        async def lc_get_current_time(timezone: str = "Asia/Seoul") -> str:
+            return await mcp_tools.get_current_time(timezone=timezone)
+
+        @tool("fetch_url")
+        async def lc_fetch_url(url: str) -> str:
+            return await mcp_tools.fetch_url(url=url)
+
+        tools = [lc_get_current_time, lc_fetch_url]
+
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", SYSTEM_PROMPT + " Use tools when helpful. Answer concisely."),
+            ("human", "{input}"),
+            MessagesPlaceholder(variable_name="agent_scratchpad"),
+        ])
+
+        langchain_agent = AgentExecutor(
+            agent=create_react_agent(llm=llm, tools=tools, prompt=prompt),
+            tools=tools,
+            verbose=False,
+            handle_parsing_errors=True,
+            max_iterations=6,
+        )
 
 
 @app.on_event("shutdown")
@@ -61,6 +109,7 @@ async def shutdown() -> None:
         await vllm_client.close()
     if mcp_tools:
         await mcp_tools.close()
+    # LangChain agent has no explicit close
 
 
 SYSTEM_PROMPT = (
@@ -171,6 +220,24 @@ async def chat(request: ChatRequest) -> ChatResponse:
     except Exception as e:
         logger.error(f"Chat error: {e}")
         raise HTTPException(status_code=500, detail="Chat processing failed")
+
+
+@app.post("/api/agent_chat", response_model=ChatResponse)
+async def agent_chat(request: ChatRequest) -> ChatResponse:
+    """LangChain 기반 에이전트와 채팅 (ReAct + Tools)"""
+    if not _LANGCHAIN_AVAILABLE:
+        raise HTTPException(status_code=500, detail="LangChain not installed")
+    if not langchain_agent:
+        raise HTTPException(status_code=500, detail="Agent not initialized")
+    try:
+        # AgentExecutor supports async invoke via .ainvoke
+        result = await langchain_agent.ainvoke({"input": request.message})
+        # result may be dict with 'output'
+        output = result.get("output") if isinstance(result, dict) else str(result)
+        return ChatResponse(response=output or "")
+    except Exception as e:
+        logger.error(f"Agent chat error: {e}")
+        raise HTTPException(status_code=500, detail="Agent chat failed")
 
 
 @app.get("/api/tools")
