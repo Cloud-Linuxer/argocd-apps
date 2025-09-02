@@ -57,7 +57,7 @@ class MCPTools:
                                 "description": "Timezone name, e.g., Asia/Seoul"
                             }
                         },
-                        "required": []
+                        # omit empty required to avoid schema validation quirks
                     },
                 },
             },

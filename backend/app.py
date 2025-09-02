@@ -145,6 +145,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
                     messages.append({
                         "role": "tool",
                         "tool_call_id": call_id,
+                        "name": name,
                         "content": result,
                     })
                     
@@ -154,6 +155,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
                     messages.append({
                         "role": "tool", 
                         "tool_call_id": call.get("id", "error"),
+                        "name": call.get("function", {}).get("name", "unknown"),
                         "content": f"Tool call processing failed: {e}"
                     })
             logger.debug("messages before follow-up: %s", [m.get("role") for m in messages])

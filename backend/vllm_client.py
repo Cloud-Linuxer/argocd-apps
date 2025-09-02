@@ -46,7 +46,12 @@ class VLLMClient:
             json=payload,
             headers={"Content-Type": "application/json"},
         )
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            body = exc.response.text if exc.response is not None else ""
+            logger.error("vLLM HTTP error %s: %s", exc.response.status_code if exc.response else "?", body)
+            raise
         data = response.json()
         logger.debug("vLLM response keys: %s", list(data.keys()))
         return data
