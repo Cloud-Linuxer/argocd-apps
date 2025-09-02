@@ -8,8 +8,6 @@ VLLM 펑션콜 에이전트 설정 관리
 - 모든 민감한 정보는 환경변수나 .env 파일로 관리하세요.
 """
 
-import os
-from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
@@ -39,13 +37,6 @@ class Settings(BaseSettings):
         default="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         description="로그 형식"
     )
-    
-    # 에이전트 설정
-    agent_max_iterations: int = Field(default=10, description="에이전트 최대 반복 횟수")
-    agent_timeout: int = Field(default=300, description="에이전트 타임아웃 (초)")
-    
-    # MCP 도구 설정 (필요시에만)
-    mcp_tools_enabled: bool = Field(default=True, description="MCP 도구 사용 여부")
     
     model_config = {
         "env_file": ".env",
@@ -87,16 +78,3 @@ def get_vllm_config() -> dict:
 
 
 
-def get_agent_config() -> dict:
-    """에이전트 설정 반환"""
-    return {
-        "max_iterations": settings.agent_max_iterations,
-        "timeout": settings.agent_timeout
-    }
-
-
-def get_mcp_config() -> dict:
-    """MCP 도구 설정 반환"""
-    return {
-        "enabled": settings.mcp_tools_enabled
-    }
