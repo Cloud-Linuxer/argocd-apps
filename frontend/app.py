@@ -2,6 +2,25 @@ import streamlit as st
 import os
 from api_client import BackendClient
 
+st.set_page_config(page_title="🌌 Galaxy Chat", page_icon="🌌", layout="wide")
+
+# 우주 느낌의 배경과 읽기 쉬운 채팅 스타일 적용
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background: radial-gradient(circle at 50% 50%, #1a2a6c, #000000);
+        color: #ffffff;
+    }
+    div[data-testid="stChatMessage"] {
+        background-color: rgba(0, 0, 0, 0.6);
+        border-radius: 10px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # 백엔드 URL 설정
 BACKEND_URL = os.getenv("BACKEND_URL", "http://backend-service")
 client = BackendClient(BACKEND_URL)
