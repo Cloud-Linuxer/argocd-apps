@@ -10,31 +10,10 @@ spec:
     spec:
       runtimeClassName: nvidia
       hostIPC: true
-      # 1) vLLM 최신 휠을 받아서 오버레이에 설치하는 initContainer
-      initContainers:
-        - name: wheel-fetcher
-          image: vllm/vllm-openai:gptoss   # 메인 컨테이너와 동일 이미지(파이썬/쿠다 호환 보장)
-          command: ["/bin/bash","-lc"]
-          args:
-            - |
-              set -euo pipefail
-              python -V
-              pip -V
-              # 오버레이 디렉토리
-              mkdir -p /opt/vllm-overlay
-              # gpt-oss 채널의 최신 vllm 휠 설치 (기존 것 위에 로컬 우선)
-              pip install --pre "vllm==0.10.1+gptoss" \
-                --extra-index-url https://wheels.vllm.ai/gpt-oss/ \
-                --extra-index-url https://download.pytorch.org/whl/nightly/cu128 \
-                --no-cache-dir \
-                --target /opt/vllm-overlay
-          volumeMounts:
-            - name: vllm-overlay
-              mountPath: /opt/vllm-overlay
 
       containers:
         - name: vllm
-          image: vllm/vllm-openai:gptoss
+          image: ghcr.io/cloud-linuxer/argocd-apps/vllm:0.1.0-amd64
           imagePullPolicy: Always
           args:
             - --model
@@ -63,14 +42,7 @@ spec:
               value: "1"
             - name: PYTORCH_CUDA_ALLOC_CONF
               value: "expandable_segments:True"
-            # 2) 오버레이된 휠을 우선 사용하게 경로 주입
-            - name: PYTHONPATH
-              value: "/opt/vllm-overlay:${PYTHONPATH}"
-            - name: PATH
-              value: "/opt/vllm-overlay/bin:${PATH}"
           volumeMounts:
-            - name: vllm-overlay
-              mountPath: /opt/vllm-overlay
             - name: hf-cache
               mountPath: /root/.cache/huggingface
             - name: models
@@ -80,8 +52,6 @@ spec:
               nvidia.com/gpu: 1
 
       volumes:
-        - name: vllm-overlay
-          emptyDir: {}   # initContainer가 설치한 휠을 메인 컨테이너와 공유
         - name: hf-cache
           hostPath:
             path: /home/gpt-oss/.cache/huggingface
