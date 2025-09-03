@@ -6,6 +6,7 @@ on:
 
 jobs:
   build:
+    # 셀프호스트면 runs-on: [self-hosted, linux, x64] 등으로 교체
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -31,20 +32,42 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Docker Buildx
+      # BuildKit GC 한도를 강하게 제한 (셀프호스트 DinD에서 특히 중요)
+      - name: Set up Docker Buildx (with GC limits)
         uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:latest
+          buildkitd-flags: >-
+            --oci-worker-gc --oci-worker-gc-keepstorage 20GB
+            --debug=false
 
-      - name: Build and push Docker image
+      # (셀프호스트일 때만) 시작 전 강제 청소 - 호스티드는 생략 가능
+      - name: Pre-clean (self-hosted only)
+        if: startsWith(runner.name, 'self-hosted')
+        run: |
+          docker buildx prune -af || true
+          docker system prune -af --volumes || true
+
+      - name: Build and push Docker image (registry cache)
         uses: docker/build-push-action@v5
         with:
           context: ./vllm
           platforms: linux/amd64
-          push: true
+          push: true                 # 절대 load 하지 마라
           tags: |
             ${{ steps.prep.outputs.image }}:${{ steps.version.outputs.version }}-amd64
             ${{ steps.prep.outputs.image }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # 레지스트리 캐시로 전환 (GHCR)
+          cache-from: type=registry,ref=${{ steps.prep.outputs.image }}:cache
+          cache-to: type=registry,ref=${{ steps.prep.outputs.image }}:cache,mode=max
+          # 출력 메타데이터 축소로 디스크/네트워크 절약
+          provenance: false
+          sbom: false
+          # 빌드 인수로 캐시 최소화 (Dockerfile에서 참조 가능)
+          build-args: |
+            PIP_NO_CACHE_DIR=1
+            UV_HTTP_TIMEOUT=600
 
       - name: Update manifest
         run: |
