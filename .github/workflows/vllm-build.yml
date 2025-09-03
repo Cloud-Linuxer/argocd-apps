@@ -45,11 +45,7 @@ jobs:
         with:
           driver-opts: |
             image=moby/buildkit:v0.13.2
-          buildkitd-flags: |
-            --oci-worker
-            --oci-worker-gc=true
-            --oci-worker-gc-keepstorage=20480
-            --debug=false
+          buildkitd-flags: --oci-worker-gc --oci-worker-gc-keepstorage=20480 --debug=false
 
       # 셀프호스트 시작 전/후 디스크 청소 (안전장치)
       - name: Pre-clean (self-hosted)
