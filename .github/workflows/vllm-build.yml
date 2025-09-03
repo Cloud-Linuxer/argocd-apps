@@ -47,7 +47,7 @@ jobs:
             image=moby/buildkit:v0.13.2
           buildkitd-flags: |
             --oci-worker
-            --oci-worker-gc
+            --oci-worker-gc=true
             --oci-worker-gc-keepstorage=20480
             --debug=false
 
