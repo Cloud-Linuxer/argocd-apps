@@ -48,7 +48,7 @@ jobs:
           buildkitd-flags: |
             --oci-worker
             --oci-worker-gc
-            --oci-worker-gc-keepstorage=20GB
+            --oci-worker-gc-keepstorage=20480
             --debug=false
 
       # 셀프호스트 시작 전/후 디스크 청소 (안전장치)
