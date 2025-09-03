@@ -62,8 +62,8 @@ jobs:
           tags: |
             ${{ steps.prep.outputs.image }}:${{ steps.version.outputs.version }}-amd64
             ${{ steps.prep.outputs.image }}:latest
-          cache-from: type=registry,ref=${{ steps.prep.outputs.image }}:cache
-          cache-to: type=registry,ref=${{ steps.prep.outputs.image }}:cache,mode=max
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           provenance: false
           sbom: false
           build-args: |
