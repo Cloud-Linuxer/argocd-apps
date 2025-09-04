@@ -40,6 +40,11 @@ spec:
               value: "1"
             - name: PYTORCH_CUDA_ALLOC_CONF
               value: "expandable_segments:True"
+            # FlashAttention 호환성 문제 해결
+            - name: VLLM_ATTENTION_BACKEND
+              value: "XFORMERS"
+            - name: VLLM_USE_V1
+              value: "false"
           volumeMounts:
             - name: hf-cache
               mountPath: /root/.cache/huggingface
