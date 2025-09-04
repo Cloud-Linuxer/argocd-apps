@@ -17,18 +17,20 @@ spec:
           args:
             - --model
             - openai/gpt-oss-20b
-            - --max-model-len
-            - "12090"
+            # - --max-model-len
+            # - "12090"          # 확실할 때만 사용
             - --dtype
-            - float32                # (수정) sinks 요구사항 충족
-            - --kv-cache-dtype
-            - fp8                    # (추가) 메모리 폭증 방지
+            - bfloat16           # MXFP4는 bf16만 지원
             - --tensor-parallel-size
             - "1"
             - --gpu-memory-utilization
             - "0.90"
             - --download-dir
             - /models
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
           ports:
             - containerPort: 8000
           env:
@@ -36,10 +38,12 @@ spec:
               value: "SYS"
             - name: VLLM_LOGGING_LEVEL
               value: "INFO"
+            - name: HF_HOME
+              value: /root/.cache/huggingface
             - name: VLLM_ATTENTION_BACKEND
-              value: "FLASHINFER"    # (추가) Blackwell에서는 FA3 불가
-            - name: VLLM_USE_XFORMERS_SAMPLER
-              value: "1"
+              value: FLASHINFER          # Blackwell은 FlashInfer 경로
+            - name: VLLM_USE_FLASHINFER_MXFP4_MOE
+              value: "1"                 # MXFP4 MoE + sinks 경로 활성화
             - name: PYTORCH_CUDA_ALLOC_CONF
               value: "expandable_segments:True"
           volumeMounts:
@@ -52,10 +56,6 @@ spec:
               nvidia.com/gpu: 1
       volumes:
         - name: hf-cache
-          hostPath:
-            path: /home/gpt-oss/.cache/huggingface
-            type: DirectoryOrCreate
+          hostPath: { path: /home/gpt-oss/.cache/huggingface, type: DirectoryOrCreate }
         - name: models
-          hostPath:
-            path: /home/gpt-oss/models
-            type: DirectoryOrCreate
+          hostPath: { path: /home/gpt-oss/models, type: DirectoryOrCreate }
