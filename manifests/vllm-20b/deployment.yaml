@@ -41,6 +41,10 @@ spec:
               value: INFO
             - name: VLLM_USE_V1
               value: "0"
+            - name: VLLM_DISABLE_SINKS
+              value: "1"
+            - name: VLLM_ATTENTION_BACKEND
+              value: TORCH_SDPA
           ports:
             - name: http
               containerPort: 8000
