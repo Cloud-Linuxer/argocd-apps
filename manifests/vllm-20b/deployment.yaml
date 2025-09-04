@@ -12,7 +12,7 @@ spec:
       hostIPC: true
       containers:
         - name: vllm
-          image: ghcr.io/cloud-linuxer/argocd-apps/vllm:0.1.0-amd64
+          image: vllm/vllm-openai:gptoss
           imagePullPolicy: Always
           args:
             - --model
