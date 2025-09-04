@@ -2,88 +2,54 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: vllm-gpt-oss-20b
-  labels:
-    app: vllm
 spec:
   replicas: 1
-  selector:
-    matchLabels:
-      app: vllm
+  selector: { matchLabels: { app: vllm } }
   template:
-    metadata:
-      labels:
-        app: vllm
+    metadata: { labels: { app: vllm } }
     spec:
       runtimeClassName: nvidia
       hostIPC: true
-      terminationGracePeriodSeconds: 120
       containers:
         - name: vllm
-          image: vllm/vllm-openai:gptoss
+          image: ghcr.io/cloud-linuxer/argocd-apps/vllm:0.1.0-amd64
           imagePullPolicy: Always
           args:
             - --model
             - openai/gpt-oss-20b
+            - --max-model-len
+            - "12090"
             - --dtype
-            - bfloat16
+            - float32                # (수정) sinks 요구사항 충족
+            - --kv-cache-dtype
+            - fp8                    # (추가) 메모리 폭증 방지
             - --tensor-parallel-size
             - "1"
             - --gpu-memory-utilization
             - "0.90"
             - --download-dir
             - /models
-            - --served-model-name
-            - gpt-oss-20b
-            - --host
-            - 0.0.0.0
-            - --port
-            - "8000"
           ports:
-            - name: http
-              containerPort: 8000
+            - containerPort: 8000
           env:
             - name: NCCL_P2P_LEVEL
               value: "SYS"
             - name: VLLM_LOGGING_LEVEL
               value: "INFO"
+            - name: VLLM_ATTENTION_BACKEND
+              value: "FLASHINFER"    # (추가) Blackwell에서는 FA3 불가
+            - name: VLLM_USE_XFORMERS_SAMPLER
+              value: "1"
             - name: PYTORCH_CUDA_ALLOC_CONF
               value: "expandable_segments:True"
-            - name: HF_HOME
-              value: /root/.cache/huggingface
-            - name: VLLM_ATTENTION_BACKEND
-              value: FLASHINFER
           volumeMounts:
             - name: hf-cache
               mountPath: /root/.cache/huggingface
             - name: models
               mountPath: /models
-            - name: dshm
-              mountPath: /dev/shm
           resources:
-            requests:
-              cpu: "2"
-              memory: "16Gi"
-              nvidia.com/gpu: 1
             limits:
-              cpu: "8"
-              memory: "48Gi"
               nvidia.com/gpu: 1
-          readinessProbe:
-            httpGet:
-              path: /v1/models
-              port: 8000
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            timeoutSeconds: 2
-            failureThreshold: 12
-          livenessProbe:
-            httpGet:
-              path: /v1/models
-              port: 8000
-            initialDelaySeconds: 60
-            periodSeconds: 20
-            timeoutSeconds: 2
-            failureThreshold: 6
       volumes:
         - name: hf-cache
           hostPath:
@@ -93,7 +59,3 @@ spec:
           hostPath:
             path: /home/gpt-oss/models
             type: DirectoryOrCreate
-        - name: dshm
-          emptyDir:
-            medium: Memory
-            sizeLimit: "4Gi"
