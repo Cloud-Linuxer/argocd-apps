@@ -50,6 +50,8 @@ spec:
               value: "expandable_segments:True"
             - name: HF_HOME
               value: /root/.cache/huggingface
+            - name: VLLM_ATTENTION_BACKEND
+              value: FLASHINFER
           volumeMounts:
             - name: hf-cache
               mountPath: /root/.cache/huggingface
