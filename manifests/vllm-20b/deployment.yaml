@@ -30,12 +30,7 @@ spec:
             - --tensor-parallel-size
             - "1"
             - --gpu-memory-utilization
-            - "0.95"
-            - --max-num-seqs
-            - "512"
-            - --attention-backend
-            - FLASHINFER
-            - --disable-custom-all-reduce
+            - "0.90"
             - --host
             - 0.0.0.0
             - --port
@@ -45,12 +40,6 @@ spec:
               value: /root/.cache/huggingface
             - name: VLLM_LOGGING_LEVEL
               value: INFO
-            - name: PYTORCH_CUDA_ALLOC_CONF
-              value: expandable_segments:True
-            - name: VLLM_ATTENTION_BACKEND
-              value: FLASHINFER
-            - name: CUDA_VISIBLE_DEVICES
-              value: "0"
           ports:
             - name: http
               containerPort: 8000
@@ -70,4 +59,4 @@ spec:
         - name: hf-cache
           hostPath: { path: /home/gpt-oss/.cache/huggingface, type: DirectoryOrCreate }
         - name: dshm
-          emptyDir: { medium: Memory, sizeLimit: 16Gi }
+          emptyDir: { medium: Memory, sizeLimit: 8Gi }
