@@ -1,61 +1,97 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: vllm-gpt-oss-20b
 spec:
   replicas: 1
-  selector: { matchLabels: { app: vllm } }
+  selector:
+    matchLabels:
+      app: vllm-gpt-oss-20b
   template:
-    metadata: { labels: { app: vllm } }
+    metadata:
+      labels:
+        app: vllm-gpt-oss-20b
     spec:
-      runtimeClassName: nvidia
+      # docker run --ipc=host 대응
       hostIPC: true
+      runtimeClassName: nvidia
       containers:
         - name: vllm
-          image: vllm/vllm-openai:gptoss
-          imagePullPolicy: Always
+          image: vllm/vllm-openai:v0.10.1
+          imagePullPolicy: IfNotPresent
           args:
             - --model
             - openai/gpt-oss-20b
-            # - --max-model-len
-            # - "12090"          # 확실할 때만 사용
             - --dtype
-            - bfloat16           # MXFP4는 bf16만 지원
+            - bfloat16
             - --tensor-parallel-size
             - "1"
             - --gpu-memory-utilization
             - "0.90"
-            - --download-dir
-            - /models
             - --host
             - 0.0.0.0
             - --port
             - "8000"
-          ports:
-            - containerPort: 8000
+            # 성능용(구조화 출력/일부 스트리밍 기능과 상충 가능)
+            # - --async-scheduling
+            # 도구 실행까지 묶어 데모로 확인하려면(검색/파이썬):
+            # - --tool-server
+            # - demo
           env:
-            - name: NCCL_P2P_LEVEL
-              value: "SYS"
-            - name: VLLM_LOGGING_LEVEL
-              value: "INFO"
             - name: HF_HOME
               value: /root/.cache/huggingface
-            - name: VLLM_ATTENTION_BACKEND
-              value: FLASHINFER          # Blackwell은 FlashInfer 경로
-            - name: VLLM_USE_FLASHINFER_MOE_MXFP4_BF16
-              value: "1"                 # MXFP4 MoE + sinks 경로 활성화
+            - name: VLLM_LOGGING_LEVEL
+              value: INFO
+            - name: NCCL_P2P_LEVEL
+              value: SYS
             - name: PYTORCH_CUDA_ALLOC_CONF
-              value: "expandable_segments:True"
+              value: expandable_segments:True
+            # Blackwell은 FlashInfer 백엔드 요구
+            - name: VLLM_ATTENTION_BACKEND
+              value: FLASHINFER
+            # ★ 둘 중 하나만 선택 (bf16=정밀도/기본, fp8=속도)
+            - name: VLLM_USE_FLASHINFER_MXFP4_BF16_MOE
+              value: "1"
+            # - name: VLLM_USE_FLASHINFER_MXFP4_MOE
+            #   value: "1"
+            # 브라우저 툴(Exa) 쓰려면 키 넣기
+            # - name: EXA_API_KEY
+            #   valueFrom: { secretKeyRef: { name: exa-secret, key: key } }
+            # 데모 파이썬 툴을 컨테이너 내부에서 돌릴 땐(도커 미사용):
+            # - name: PYTHON_EXECUTION_BACKEND
+            #   value: dangerously_use_uv
+          ports:
+            - name: http
+              containerPort: 8000
+          resources:
+            limits:
+              nvidia.com/gpu: 1
           volumeMounts:
             - name: hf-cache
               mountPath: /root/.cache/huggingface
             - name: models
               mountPath: /models
-          resources:
-            limits:
-              nvidia.com/gpu: 1
+            - name: dshm
+              mountPath: /dev/shm
+          readinessProbe:
+            httpGet:
+              path: /v1/models
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
       volumes:
         - name: hf-cache
-          hostPath: { path: /home/gpt-oss/.cache/huggingface, type: DirectoryOrCreate }
+          hostPath:
+            path: /home/gpt-oss/.cache/huggingface
+            type: DirectoryOrCreate
         - name: models
-          hostPath: { path: /home/gpt-oss/models, type: DirectoryOrCreate }
+          hostPath:
+            path: /home/gpt-oss/models
+            type: DirectoryOrCreate
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 8Gi
