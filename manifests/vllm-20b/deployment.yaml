@@ -34,17 +34,20 @@ spec:
             - 0.0.0.0
             - --port
             - "8000"
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              pip install flash-attn --no-build-isolation --force-reinstall || echo "FlashAttention install failed, continuing..."
+              python -m vllm.entrypoints.openai.api_server --model openai/gpt-oss-20b --dtype bfloat16 --enforce-eager --gpu-memory-utilization 0.85 --max-model-len 8192 --host 0.0.0.0 --port 8000
           env:
             - name: HF_HOME
               value: /root/.cache/huggingface
             - name: VLLM_LOGGING_LEVEL
               value: INFO
-            - name: VLLM_USE_V1
-              value: "0"
-            - name: VLLM_DISABLE_SINKS
-              value: "1"
-            - name: VLLM_ATTENTION_BACKEND
-              value: TORCH_SDPA
+            - name: FLASH_ATTENTION_SKIP_CUDA_BUILD
+              value: "FALSE"
+            - name: MAX_JOBS
+              value: "4"
           ports:
             - name: http
               containerPort: 8000
