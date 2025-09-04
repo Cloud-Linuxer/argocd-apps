@@ -13,7 +13,7 @@ spec:
 
       containers:
         - name: vllm
-          image: localhost:5000/vllm:0.1.0-amd64
+          image: localhost:30002/vllm:0.1.0-amd64
           imagePullPolicy: Always
           args:
             - --model
