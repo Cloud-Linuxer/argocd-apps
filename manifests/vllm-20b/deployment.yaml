@@ -39,10 +39,12 @@ spec:
               value: /root/.cache/huggingface
             - name: VLLM_LOGGING_LEVEL
               value: INFO
+            - name: VLLM_USE_V1
+              value: "0"
+            - name: VLLM_ATTENTION_BACKEND
+              value: XFORMERS
             - name: VLLM_USE_TRITON_FLASH_ATTN
               value: "0"
-            - name: FLASH_ATTENTION_VERSION
-              value: "3"
           ports:
             - name: http
               containerPort: 8000
