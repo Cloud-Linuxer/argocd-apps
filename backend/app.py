@@ -105,7 +105,7 @@ async def startup() -> None:
         tools = [lc_http_request, lc_time_now]
 
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "간결한 한국어로 답하고 필요 시 도구를 사용하라."),
+            ("system", "간결한 한국어로 답하고 필요 시 도구를 사용하라.\n\n사용 가능한 도구: {tool_names}\n\n{tools}"),
             ("human", "{input}"),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ])
