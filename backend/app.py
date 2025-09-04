@@ -128,7 +128,7 @@ async def shutdown() -> None:
     # LangChain agent has no explicit close
 
 
-SYSTEM_PROMPT = "간결한 한국어로 답하라. 필요하면 도구를 사용하라."
+SYSTEM_PROMPT = "한국어로 간결하게 답해."
 
 
 @app.post("/api/chat", response_model=ChatResponse)
