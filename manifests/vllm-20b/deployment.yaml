@@ -28,7 +28,6 @@ spec:
             - "0.90"
             - --download-dir
             - /models
-            - --enable-harmony
           ports:
             - containerPort: 8000
           env:
