@@ -24,13 +24,18 @@ spec:
             - --model
             - openai/gpt-oss-20b
             - --max-model-len
-            - "8096"
+            - "8192"
             - --dtype
             - bfloat16
             - --tensor-parallel-size
             - "1"
             - --gpu-memory-utilization
-            - "0.90"
+            - "0.95"
+            - --max-num-seqs
+            - "512"
+            - --attention-backend
+            - FLASHINFER
+            - --disable-custom-all-reduce
             - --host
             - 0.0.0.0
             - --port
@@ -40,6 +45,12 @@ spec:
               value: /root/.cache/huggingface
             - name: VLLM_LOGGING_LEVEL
               value: INFO
+            - name: PYTORCH_CUDA_ALLOC_CONF
+              value: expandable_segments:True
+            - name: VLLM_ATTENTION_BACKEND
+              value: FLASHINFER
+            - name: CUDA_VISIBLE_DEVICES
+              value: "0"
           ports:
             - name: http
               containerPort: 8000
@@ -59,4 +70,4 @@ spec:
         - name: hf-cache
           hostPath: { path: /home/gpt-oss/.cache/huggingface, type: DirectoryOrCreate }
         - name: dshm
-          emptyDir: { medium: Memory, sizeLimit: 8Gi }
+          emptyDir: { medium: Memory, sizeLimit: 16Gi }
