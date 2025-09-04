@@ -18,11 +18,13 @@ spec:
       runtimeClassName: nvidia
       containers:
         - name: vllm
-          image: vllm/vllm-openai:v0.10.1
+          image: vllm/vllm-openai:gptoss
           imagePullPolicy: IfNotPresent
           args:
             - --model
             - openai/gpt-oss-20b
+            - --max-model-len
+            - "8096"
             - --dtype
             - bfloat16
             - --tensor-parallel-size
@@ -33,26 +35,16 @@ spec:
             - 0.0.0.0
             - --port
             - "8000"
-            - --download-dir
-            - /models
-            - --enforce-eager
           env:
             - name: HF_HOME
               value: /root/.cache/huggingface
             - name: VLLM_LOGGING_LEVEL
               value: INFO
-            - name: NCCL_P2P_LEVEL
-              value: SYS
-            - name: PYTORCH_CUDA_ALLOC_CONF
-              value: expandable_segments:True
-            - name: VLLM_ATTENTION_BACKEND
-              value: FLASHINFER
           ports:
             - name: http
               containerPort: 8000
           volumeMounts:
             - { name: hf-cache, mountPath: /root/.cache/huggingface }
-            - { name: models,   mountPath: /models }
             - { name: dshm,     mountPath: /dev/shm }
           resources:
             limits:
@@ -66,7 +58,5 @@ spec:
       volumes:
         - name: hf-cache
           hostPath: { path: /home/gpt-oss/.cache/huggingface, type: DirectoryOrCreate }
-        - name: models
-          hostPath: { path: /home/gpt-oss/models, type: DirectoryOrCreate }
         - name: dshm
           emptyDir: { medium: Memory, sizeLimit: 8Gi }
