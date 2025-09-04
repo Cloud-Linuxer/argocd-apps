@@ -13,7 +13,7 @@ spec:
 
       containers:
         - name: vllm
-          image: localhost:30002/vllm:0.1.0-amd64
+          image: ghcr.io/cloud-linuxer/argocd-apps/vllm:0.1.0-amd64
           imagePullPolicy: Always
           args:
             - --model
