@@ -25,8 +25,6 @@ spec:
             - openai/gpt-oss-20b
             - --dtype
             - bfloat16
-            - --attention-backend
-            - FLASH_ATTN
             - --enforce-eager
             - --gpu-memory-utilization
             - "0.85"
@@ -41,11 +39,9 @@ spec:
               value: /root/.cache/huggingface
             - name: VLLM_LOGGING_LEVEL
               value: INFO
-            - name: VLLM_ATTENTION_BACKEND
-              value: FLASH_ATTN
-            - name: VLLM_FLASHINFER_FORCE_ENABLE
-              value: "1"
-            - name: FLASH_ATTENTION_FORCE_VERSION
+            - name: VLLM_USE_TRITON_FLASH_ATTN
+              value: "0"
+            - name: FLASH_ATTENTION_VERSION
               value: "3"
           ports:
             - name: http
