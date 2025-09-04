@@ -87,6 +87,7 @@ async def startup() -> None:
             json_body: Annotated[Optional[Any], Field(alias="json")] = None,
             timeout_s: int = 5,
         ) -> str:
+            """Make HTTP requests to internal/external APIs."""
             return await mcp_tools.http_request(
                 method,
                 url,
@@ -98,6 +99,7 @@ async def startup() -> None:
 
         @tool("time_now")
         async def lc_time_now(timezone: str = "UTC") -> str:
+            """Get current time in specified timezone."""
             return await mcp_tools.time_now(timezone=timezone)
 
         tools = [lc_http_request, lc_time_now]
