@@ -28,9 +28,16 @@ class VLLMClient:
         tools: Optional[List[Dict[str, Any]]] = None,
         tool_choice: Optional[Any] = None,
     ) -> Dict[str, Any]:
+        # Filter out messages with None content
+        filtered_messages = []
+        for msg in messages:
+            if msg.get("content") is None:
+                msg = {**msg, "content": ""}
+            filtered_messages.append(msg)
+        
         payload: Dict[str, Any] = {
             "model": self.model,
-            "messages": messages,
+            "messages": filtered_messages,
             "max_tokens": self.max_tokens,
             "temperature": self.temperature,
         }

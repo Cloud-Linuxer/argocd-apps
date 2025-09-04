@@ -148,7 +148,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
         msg = response["choices"][0]["message"]
         logger.debug("model message: %s", msg)
 
-        if "tool_calls" in msg:
+        if "tool_calls" in msg and msg["tool_calls"]:
             messages.append(msg)
             for call in msg["tool_calls"]:
                 try:
@@ -207,7 +207,10 @@ async def chat(request: ChatRequest) -> ChatResponse:
             final = followup["choices"][0]["message"].get("content", "")
             return ChatResponse(response=final)
         else:
-            return ChatResponse(response=msg.get("content", ""))
+            content = msg.get("content")
+            if content is None:
+                content = "죄송합니다. 응답을 생성할 수 없습니다."
+            return ChatResponse(response=content)
     except Exception as e:
         logger.error(f"Chat error: {e}")
         raise HTTPException(status_code=500, detail="Chat processing failed")
