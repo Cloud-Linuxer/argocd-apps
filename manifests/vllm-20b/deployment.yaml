@@ -21,7 +21,7 @@ spec:
             - --max-model-len
             - "12090"
             - --dtype
-            - bbfloat16
+            - bfloat16
             - --tensor-parallel-size
             - "1"
             - --gpu-memory-utilization
