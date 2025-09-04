@@ -141,10 +141,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
         {"role": "user", "content": request.message},
     ]
     try:
-        response = await vllm_client.chat(
-            messages,
-            tools=mcp_tools.get_schemas(),
-        )
+        # 일반 채팅에서는 tools 없이 시도
+        response = await vllm_client.chat(messages)
         msg = response["choices"][0]["message"]
         logger.debug("model message: %s", msg)
 
