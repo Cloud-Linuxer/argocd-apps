@@ -3,7 +3,7 @@
 import json
 import asyncio
 import logging
-from typing import Optional, List, Dict, Any
+from typing import Annotated, Optional, List, Dict, Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -84,7 +84,7 @@ async def startup() -> None:
             url: str,
             headers: Optional[Dict[str, str]] = None,
             query: Optional[Dict[str, Any]] = None,
-            json_body: Optional[Any] = Field(default=None, alias="json"),
+            json_body: Annotated[Optional[Any], Field(alias="json")] = None,
             timeout_s: int = 5,
         ) -> str:
             return await mcp_tools.http_request(
