@@ -42,7 +42,7 @@ spec:
               value: /root/.cache/huggingface
             - name: VLLM_ATTENTION_BACKEND
               value: FLASHINFER          # Blackwell은 FlashInfer 경로
-            - name: VLLM_USE_FLASHINFER_MXFP4_MOE
+            - name: VLLM_USE_FLASHINFER_MOE_MXFP4_BF16
               value: "1"                 # MXFP4 MoE + sinks 경로 활성화
             - name: PYTORCH_CUDA_ALLOC_CONF
               value: "expandable_segments:True"
