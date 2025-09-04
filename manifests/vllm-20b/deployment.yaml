@@ -25,6 +25,8 @@ spec:
             - openai/gpt-oss-20b
             - --dtype
             - bfloat16
+            - --quantization
+            - none
             - --tensor-parallel-size
             - "1"
             - --gpu-memory-utilization
