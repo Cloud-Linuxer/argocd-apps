@@ -3,7 +3,7 @@
 import json
 import asyncio
 import logging
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from config import get_vllm_config, get_settings
 from vllm_client import VLLMClient
 from mcp_tools import MCPTools
-from typing import Any
+from version import __version__
 
 try:
     # LangChain integration (optional at import time)
@@ -30,7 +30,7 @@ _level = getattr(logging, _level_name, logging.INFO)
 logging.basicConfig(level=_level, format=settings.log_format)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="VLLM Chat Backend", version="3.0.6")
+app = FastAPI(title="VLLM Chat Backend", version=__version__)
 
 app.add_middleware(
     CORSMiddleware,
@@ -78,20 +78,27 @@ async def startup() -> None:
         )
 
         # Wrap MCPTools methods as LangChain tools
-        @tool("get_current_time")
-        async def lc_get_current_time(timezone: str = "Asia/Seoul") -> str:
-            """Get current time for a timezone (default Asia/Seoul)."""
-            return await mcp_tools.get_current_time(timezone=timezone)
+        @tool("http_request")
+        async def lc_http_request(
+            method: str,
+            url: str,
+            headers: Optional[Dict[str, str]] = None,
+            query: Optional[Dict[str, Any]] = None,
+            json: Optional[Any] = None,
+            timeout_s: int = 5,
+        ) -> str:
+            return await mcp_tools.http_request(
+                method, url, headers=headers, query=query, json=json, timeout_s=timeout_s
+            )
 
-        @tool("fetch_url")
-        async def lc_fetch_url(url: str) -> str:
-            """Fetch the text content of a URL (first 1000 chars)."""
-            return await mcp_tools.fetch_url(url=url)
+        @tool("time_now")
+        async def lc_time_now(timezone: str = "UTC") -> str:
+            return await mcp_tools.time_now(timezone=timezone)
 
-        tools = [lc_get_current_time, lc_fetch_url]
+        tools = [lc_http_request, lc_time_now]
 
         prompt = ChatPromptTemplate.from_messages([
-            ("system", SYSTEM_PROMPT + " Use tools when helpful. Answer concisely.\n\nYou have access to the following tools:\n{tools}\n\nUse the following format:\n\nQuestion: the input question you must answer\nThought: you should always think about what to do\nAction: the action to take, should be one of [{tool_names}]\nAction Input: the input to the action\nObservation: the result of the action\n... (this Thought/Action/Action Input/Observation can repeat N times)\nThought: I now know the final answer\nFinal Answer: the final answer to the original input question"),
+            ("system", "간결한 한국어로 답하고 필요 시 도구를 사용하라."),
             ("human", "{input}"),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ])
@@ -114,64 +121,22 @@ async def shutdown() -> None:
     # LangChain agent has no explicit close
 
 
-SYSTEM_PROMPT = (
-    "You are a helpful assistant with tool-use abilities. "
-    "When the user asks for factual, current, or external information, prefer using tools. "
-    "For time queries, call get_current_time with an appropriate timezone. "
-    "Always return concise answers. "
-    "너의 이름은 갤럭시이고, 사용자의 의도에 따라 친절하게 답변을 한다."
-)
-
-
-def _looks_like_time_query(text: str) -> bool:
-    t = text.lower()
-    keywords = [
-        "time",
-        "현재시간",
-        "지금 시간",
-        "몇 시",
-        "몇시",
-        "what time",
-        "현재 시각",
-    ]
-    return any(k in t for k in keywords)
+SYSTEM_PROMPT = "간결한 한국어로 답하라. 필요하면 도구를 사용하라."
 
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest) -> ChatResponse:
     if not vllm_client or not mcp_tools:
         raise HTTPException(status_code=500, detail="Server not initialized")
-    
-    # For gpt-oss models, use harmony format without tools parameter
-    if "gpt-oss" in vllm_client.model.lower():
-        messages: List[Dict[str, str]] = [
-            {"role": "system", "content": SYSTEM_PROMPT + " You have access to tools like get_current_time and fetch_url. Use them when needed by describing your actions in natural language."},
-            {"role": "user", "content": request.message},
-        ]
-        try:
-            # Call without tools parameter for gpt-oss models
-            response = await vllm_client.chat(messages)
-            msg = response["choices"][0]["message"]
-            return ChatResponse(response=msg.get("content", ""))
-        except Exception as e:
-            logger.error(f"Chat error: {e}")
-            raise HTTPException(status_code=500, detail="Chat processing failed")
-    
-    # Standard OpenAI function calling for other models
+
     messages: List[Dict[str, str]] = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": request.message},
     ]
     try:
-        tool_choice = None
-        if _looks_like_time_query(request.message):
-            # Force the model to call the time tool
-            tool_choice = {"type": "function", "function": {"name": "get_current_time"}}
-
         response = await vllm_client.chat(
             messages,
             tools=mcp_tools.get_schemas(),
-            tool_choice=tool_choice,
         )
         msg = response["choices"][0]["message"]
         logger.debug("model message: %s", msg)
@@ -249,36 +214,12 @@ async def agent_chat(request: ChatRequest) -> ChatResponse:
     if not langchain_agent:
         raise HTTPException(status_code=500, detail="Agent not initialized")
     try:
-        # AgentExecutor supports async invoke via .ainvoke
         result = await langchain_agent.ainvoke({"input": request.message})
-        # result may be dict with 'output'
         output = result.get("output") if isinstance(result, dict) else str(result)
         return ChatResponse(response=output or "")
     except Exception as e:
         logger.error(f"Agent chat error: {e}")
         raise HTTPException(status_code=500, detail="Agent chat failed")
-
-
-@app.post("/api/gpt_oss_chat", response_model=ChatResponse)
-async def gpt_oss_chat(request: ChatRequest) -> ChatResponse:
-    """gpt-oss 모델 전용 채팅 (내장 도구 사용)"""
-    if not vllm_client:
-        raise HTTPException(status_code=500, detail="Server not initialized")
-    
-    # gpt-oss harmony format - simple messages without tools parameter
-    messages = [
-        {"role": "system", "content": "You are Galaxy, a helpful assistant with built-in tool capabilities. When users ask for current information, time, or web content, use your built-in tools naturally. 너의 이름은 갤럭시이고, 사용자의 의도에 따라 친절하게 답변을 한다."},
-        {"role": "user", "content": request.message}
-    ]
-    
-    try:
-        # Call vLLM without tools parameter for gpt-oss
-        response = await vllm_client.chat(messages)
-        msg = response["choices"][0]["message"]
-        return ChatResponse(response=msg.get("content", ""))
-    except Exception as e:
-        logger.error(f"GPT-OSS chat error: {e}")
-        raise HTTPException(status_code=500, detail="GPT-OSS chat failed")
 
 
 @app.get("/api/tools")
@@ -307,3 +248,4 @@ async def get_tools() -> dict:
 @app.get("/health")
 async def health() -> dict:
     return {"status": "ok"}
+

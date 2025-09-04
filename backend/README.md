@@ -49,23 +49,39 @@ python app.py
 ### 🧪 빠른 사용 예시 (cURL)
 
 ```bash
-# 1) gpt-oss 모델 전용 채팅 (내장 도구 사용) - 권장
-curl -sS -X POST http://localhost:8080/api/gpt_oss_chat \
-  -H 'Content-Type: application/json' \
-  -d '{"message": "지금 서울 시간 알려줘"}' | jq .
-
-# 2) LangChain 에이전트 대화 (도구 사용 자동 판단)
-curl -sS -X POST http://localhost:8080/api/agent_chat \
-  -H 'Content-Type: application/json' \
-  -d '{"message": "지금 서울 시간 알려줘"}' | jq .
-
-# 3) 표준 함수콜 경로 (gpt-oss는 자동 harmony 모드)
+# 1) gpt-oss 모델과 채팅 (툴 사용 가능)
 curl -sS -X POST http://localhost:8080/api/chat \
   -H 'Content-Type: application/json' \
-  -d '{"message": "현재시간"}' | jq .
+  -d '{"message": "https://example.com 을 GET 요청해줘"}' | jq .
 
-# 4) 등록된 도구 목록 확인
+# 2) LangChain 에이전트 대화 (ReAct)
+curl -sS -X POST http://localhost:8080/api/agent_chat \
+  -H 'Content-Type: application/json' \
+  -d '{"message": "현재 서울 시간을 알려줘"}' | jq .
+
+# 3) 등록된 도구 목록 확인
 curl -sS http://localhost:8080/api/tools | jq .
+```
+
+#### Responses API 툴 호출 예시
+
+```bash
+# 툴 등록 + 질문
+curl -sS -X POST "$BASE/v1/responses" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{
+  "model": "openai/gpt-oss-20b",
+  "input": "서울 날씨 어때?",
+  "tools": [
+    {"type":"function","name":"get_weather","parameters":{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]}}
+  ]
+}'
+
+# 응답에서 function_call 의 call_id 와 arguments 파싱 후 툴 실행 → 결과 전달
+curl -sS -X POST "$BASE/v1/responses" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d "{
+  \"model\": \"openai/gpt-oss-20b\",
+  \"previous_response_id\": \"${RESP_ID}\",
+  \"input\": [{\"type\":\"function_call_output\",\"call_id\":\"${CALL_ID}\",\"output\":\"{\\\"city\\\":\\\"Seoul\\\",\\\"temp_c\\\":27}\"}],
+  \"tools\": [{\"type\":\"function\",\"name\":\"get_weather\",\"parameters\":{\"type\":\"object\",\"properties\":{\"city\":{\"type\":\"string\"}},\"required\":[\"city\"]}}]
+}"
 ```
 
 ### 🐳 Docker 실행
@@ -86,11 +102,9 @@ docker run -d -p 8080:8080 \
 
 ## 🛠️ 기능
 
-### MCP 도구들 (간소화됨)
-- **시간**: 지역별 시간 조회
-- **HTTP**: GET/POST 요청
-- **VLLM**: 모델 조회, 채팅 API
-- **계산**: 수학 계산
+### MCP 도구들
+- **http_request**: 사내/외부 HTTP API 호출
+- **time_now**: 지정된 시간대의 현재 시각 반환
 
 ### OSS 모델 도구 사용
 - 일부 오픈소스 모델은 최신 `tools` 필드를 지원하지 않아 500 오류가 발생할 수 있습니다.
@@ -99,11 +113,8 @@ docker run -d -p 8080:8080 \
 ### API 엔드포인트
 - `GET /health` - 서비스 상태
 - `GET /api/tools` - 등록된 도구 목록
-- `POST /api/gpt_oss_chat` - gpt-oss 모델 전용 채팅 (내장 도구 사용) ⭐ 권장
-- `POST /api/chat` - 표준 에이전트와 채팅 (gpt-oss는 harmony 모드)
+- `POST /api/chat` - gpt-oss 모델과 채팅 (툴 사용)
 - `POST /api/agent_chat` - LangChain ReAct 에이전트와 채팅 (vLLM OpenAI API 사용)
-- `GET /api/conversation` - 대화 기록
-- `DELETE /api/conversation` - 대화 기록 초기화
 
 ## 🔒 보안
 
@@ -114,3 +125,5 @@ docker run -d -p 8080:8080 \
 3. **접근 권한** 최소화
 4. **로그 모니터링** 필수
 5. **정기적인 보안 업데이트**
+
+

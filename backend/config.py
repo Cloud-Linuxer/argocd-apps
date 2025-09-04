@@ -28,9 +28,7 @@ class Settings(BaseSettings):
     vllm_max_tokens: int = Field(default=1000, description="최대 토큰 수")
     vllm_temperature: float = Field(default=0.7, description="생성 온도")
     vllm_timeout: int = Field(default=60, description="VLLM API 타임아웃 (초)")
-    
 
-    
     # 로깅 설정
     log_level: str = Field(default="INFO", description="로그 레벨")
     log_format: str = Field(

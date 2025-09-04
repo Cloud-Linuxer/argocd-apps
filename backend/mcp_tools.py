@@ -1,16 +1,19 @@
-import re
+"""Tool implementations for HTTP requests and time queries."""
+
+from __future__ import annotations
+
 import logging
 from datetime import datetime
-from zoneinfo import ZoneInfo
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
+from zoneinfo import ZoneInfo
 import httpx
 
 logger = logging.getLogger(__name__)
 
 
 class MCPTools:
-    """Minimal MCP tools for time and URL fetching"""
+    """Minimal tools usable by the model."""
 
     def __init__(self) -> None:
         self.http_client = httpx.AsyncClient(timeout=30.0)
@@ -18,64 +21,91 @@ class MCPTools:
     async def close(self) -> None:
         await self.http_client.aclose()
 
-    async def get_current_time(self, timezone: str = "Asia/Seoul") -> str:
-        """Return current time for a timezone (default Asia/Seoul)"""
+    async def http_request(
+        self,
+        method: str,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+        query: Optional[Dict[str, Any]] = None,
+        json: Optional[Any] = None,
+        timeout_s: int = 5,
+    ) -> str:
+        """Call an HTTP API and return the first 1000 chars of the response."""
         try:
-            tz = ZoneInfo(timezone)
-        except Exception:
-            tz = ZoneInfo("Asia/Seoul")
-        now = datetime.now(tz)
-        return now.strftime("%Y-%m-%d %H:%M:%S %Z")
-
-    async def fetch_url(self, url: str) -> str:
-        """Fetch URL content and return plain text"""
-        try:
-            resp = await self.http_client.get(url)
+            resp = await self.http_client.request(
+                method=method.upper(),
+                url=url,
+                headers=headers,
+                params=query,
+                json=json,
+                timeout=timeout_s,
+            )
             resp.raise_for_status()
-            text = resp.text
-            # crude HTML tag removal
-            text = re.sub(r"<[^>]+>", " ", text)
-            text = re.sub(r"\s+", " ", text)
-            return text[:1000]
-        except Exception as e:
-            logger.error(f"fetch_url error: {e}")
-            return f"URL fetch failed: {e}"
+            return resp.text[:1000]
+        except Exception as e:  # pragma: no cover - network dependent
+            logger.error("http_request error: %s", e)
+            return f"http_request failed: {e}"
+
+    async def time_now(self, timezone: str = "UTC") -> str:
+        """Return current time for the given timezone in ISO format."""
+        try:
+            now = datetime.now(ZoneInfo(timezone))
+            return now.isoformat()
+        except Exception as e:  # pragma: no cover - tz dependent
+            logger.error("time_now error: %s", e)
+            return f"time_now failed: {e}"
 
     def get_schemas(self) -> List[Dict[str, Any]]:
-        """Return tool schemas for VLLM function calling"""
+        """Return JSON schemas for available tools."""
         return [
             {
                 "type": "function",
                 "function": {
-                    "name": "get_current_time",
-                    "description": "Get current time for a timezone (default Asia/Seoul).",
+                    "name": "http_request",
+                    "description": "사내/외부 HTTP API 호출",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "method": {
+                                "type": "string",
+                                "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+                            },
+                            "url": {"type": "string", "format": "uri"},
+                            "headers": {
+                                "type": "object",
+                                "additionalProperties": {"type": "string"},
+                            },
+                            "query": {
+                                "type": "object",
+                                "additionalProperties": {},
+                            },
+                            "json": {"type": ["object", "array", "null"]},
+                            "timeout_s": {
+                                "type": "number",
+                                "minimum": 1,
+                                "maximum": 30,
+                            },
+                        },
+                        "required": ["method", "url"],
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "time_now",
+                    "description": "지정된 시간대의 현재 시각을 ISO 형식으로 반환",
                     "parameters": {
                         "type": "object",
                         "properties": {
                             "timezone": {
                                 "type": "string",
-                                "description": "Timezone name, e.g., Asia/Seoul"
+                                "default": "UTC",
                             }
                         },
-                        # omit empty required to avoid schema validation quirks
-                    },
-                },
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "fetch_url",
-                    "description": "Fetch the text content of a URL (first 1000 chars).",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "url": {
-                                "type": "string",
-                                "description": "URL to retrieve"
-                            }
-                        },
-                        "required": ["url"]
+                        "required": [],
                     },
                 },
             },
         ]
+
