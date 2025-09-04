@@ -84,11 +84,16 @@ async def startup() -> None:
             url: str,
             headers: Optional[Dict[str, str]] = None,
             query: Optional[Dict[str, Any]] = None,
-            json: Optional[Any] = None,
+            json_body: Optional[Any] = Field(default=None, alias="json"),
             timeout_s: int = 5,
         ) -> str:
             return await mcp_tools.http_request(
-                method, url, headers=headers, query=query, json=json, timeout_s=timeout_s
+                method,
+                url,
+                headers=headers,
+                query=query,
+                json=json_body,
+                timeout_s=timeout_s,
             )
 
         @tool("time_now")
