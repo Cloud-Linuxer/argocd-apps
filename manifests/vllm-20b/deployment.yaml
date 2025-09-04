@@ -36,8 +36,6 @@ spec:
             - name: VLLM_LOGGING_LEVEL
               value: "INFO"
             # Blackwell(5090) 강제
-            - name: VLLM_ATTENTION_BACKEND
-              value: "XFORMERS"
             - name: VLLM_USE_XFORMERS_SAMPLER
               value: "1"
             - name: PYTORCH_CUDA_ALLOC_CONF
