@@ -2,69 +2,44 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: vllm-gpt-oss-20b
-  labels:
-    app: vllm
+  labels: { app: vllm }
 spec:
   replicas: 1
-  selector:
-    matchLabels:
-      app: vllm              # ← 기존 값 유지 (immutable)
+  selector: { matchLabels: { app: vllm } }
   template:
-    metadata:
-      labels:
-        app: vllm            # ← Pod 라벨도 동일
+    metadata: { labels: { app: vllm } }
     spec:
-      hostIPC: true
-      runtimeClassName: nvidia
+      runtimeClassName: nvidia     # GPU Operator가 만든 런타임
+      hostIPC: true                # docker --ipc=host 대응
       containers:
         - name: vllm
-          image: vllm/vllm-openai:gptoss
-          imagePullPolicy: IfNotPresent
+          image: vllm/vllm-openai:latest
           args:
             - --model
             - openai/gpt-oss-20b
+            - --max-model-len
+            - "12090"
             - --dtype
             - bfloat16
-            - --enforce-eager
+            - --tensor-parallel-size
+            - "1"
             - --gpu-memory-utilization
-            - "0.85"
-            - --max-model-len
-            - "8192"
-            - --host
-            - 0.0.0.0
-            - --port
-            - "8000"
-          command: ["/bin/bash", "-c"]
-          args:
-            - |
-              pip install flash-attn --no-build-isolation --force-reinstall || echo "FlashAttention install failed, continuing..."
-              python -m vllm.entrypoints.openai.api_server --model openai/gpt-oss-20b --dtype bfloat16 --enforce-eager --gpu-memory-utilization 0.85 --max-model-len 8192 --host 0.0.0.0 --port 8000
-          env:
-            - name: HF_HOME
-              value: /root/.cache/huggingface
-            - name: VLLM_LOGGING_LEVEL
-              value: INFO
-            - name: FLASH_ATTENTION_SKIP_CUDA_BUILD
-              value: "FALSE"
-            - name: MAX_JOBS
-              value: "4"
+            - "0.90"
           ports:
-            - name: http
-              containerPort: 8000
+            - containerPort: 8000
+          env:
+            - name: NCCL_P2P_LEVEL
+              value: "SYS"         # 1GPU, NVLink 없음
+            - name: VLLM_LOGGING_LEVEL
+              value: "INFO"
           volumeMounts:
-            - { name: hf-cache, mountPath: /root/.cache/huggingface }
-            - { name: dshm,     mountPath: /dev/shm }
+            - name: hf-cache
+              mountPath: /root/.cache/huggingface
           resources:
             limits:
               nvidia.com/gpu: 1
-          readinessProbe:
-            httpGet: { path: /v1/models, port: http }
-            initialDelaySeconds: 20
-            periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 12
       volumes:
         - name: hf-cache
-          hostPath: { path: /home/gpt-oss/.cache/huggingface, type: DirectoryOrCreate }
-        - name: dshm
-          emptyDir: { medium: Memory, sizeLimit: 8Gi }
+          hostPath:
+            path: /home/gpt-oss/.cache/huggingface   # 실제 경로로 교체
+            type: DirectoryOrCreate
