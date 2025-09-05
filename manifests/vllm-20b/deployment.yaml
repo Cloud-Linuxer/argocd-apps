@@ -25,6 +25,10 @@ spec:
             - "1"
             - --gpu-memory-utilization
             - "0.90"
+            - --tool-call-parser
+            - openai
+            - --enable-auto-tool-choice
+            - "true"  
           ports:
             - containerPort: 8000
           env:
